@@ -1,0 +1,54 @@
+/**
+ * blue: #52A2DF
+ * pink: #E85693 (AD pink)
+ * green: #BADA55 (used to be #83C441 - hypem green)
+ */
+
+/* pro tip: lines on the left by adding "90deg" as first arg of the linear
+ * gradients */
+
+.on-top .slide.blue  { background: linear-gradient(#52A2DF, #52A2DF 4%, #FFFFFF 4%, white); }
+.on-top .slide.pink  { background: linear-gradient(#E85693, #E85693 4%, #FFFFFF 4%, white); }
+.on-top .slide.green { background: linear-gradient(#BADA55, #BADA55 4%, #FFFFFF 4%, white); }
+
+.slide.blue  { background: linear-gradient(-45deg, white, white 91%, #52A2DF 91%, #52A2DF); }
+.slide.pink  { background: linear-gradient(-45deg, white, white 91%, #E85693 91%, #E85693); }
+.slide.green { background: linear-gradient(-45deg, white, white 91%, #BADA55 91%, #BADA55); }
+
+.slide.shout.blue,  .slide.cover.blue  { background: #52A2DF; }
+.slide.shout.pink,  .slide.cover.pink  { background: #E85693; }
+.slide.shout.green, .slide.cover.green { background: #BADA55; }
+
+/* custom colors */
+.full .progress div {
+    background: #333333;
+}
+
+.list .slide:target:before{
+	/*box-shadow:0 0 10px 0 #3c99db,0 0 0 12px ##FAFAC4;*/ /* active border */
+}
+
+/* intro */
+.slide.intro {
+    background: linear-gradient(
+        90deg,
+        #52A2DF   , #52A2DF 1%,
+        #E85693 1%, #E85693 2%,
+        #BADA55 2%, #BADA55 3%,
+        #FFFFFF 3%, white);
+}
+
+.slide.shout.intro h2 {
+    color: black;
+}
+.slide.shout.intro aside {
+    color: #303030;
+    position: absolute;
+    left: 128px;
+    bottom: 40px;
+}
+.slide.shout.intro aside small {
+    color: #606060;
+    font-size: .8em;
+    padding-left: 15px;
+}
