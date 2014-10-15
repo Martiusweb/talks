@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Un serveur fiable avec Python 3.4 - Martin Richard</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=680, user-scalable=no">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<link rel="stylesheet" href="../theme/styles/screen.css">
+	<link rel="stylesheet" href="../theme/styles/custom.css">
+	<link rel="stylesheet" href="styles.css">
+</head>
+<body class="list">
+	<!--
+		Debug class on <body> enables
+		cyan grid on slides
+		-->
+	<header class="caption">
+		<h1>Un serveur fiable avec Python 3.4</h1>
+		<p><a href="https://www.martiusweb.net/">Martin Richard</a>, alwaysdata</p>
+	</header>
+	<section class="slide shout intro"><div>
+		<h2>Un serveur fiable avec Python 3.4</h2>
+		<aside>
+		    Martin Richard <small>PyCon FR - 25 octobre 2014</small>
+		</aside>
+		<footer>
+			<p>Bonjour! Je suis ingénieur système et réseau chez alwaysdata,
+			c'est ma première conf' et je vais vous montrer qu'on peut faire un
+			serveur fiable et performant, sans avoir besoin de C.</p>
+		</footer>
+	</div></section>
+	<section class="slide"><div>
+		<h2>Dans cette présentation&nbsp;:</h2>
+		<p class="note">Retour d'expérience: un reverse-proxy HTTP avec asyncio</p>
+		<ol>
+		    <li>Concurrence</li>
+		    <li>Architecture</li>
+		    <li>Implémentation</li>
+		</ol>
+		<footer>
+			<p>En particulier, je vais parler d'un projet sur lequel je
+			travaille depuis environ 4 mois : un reverse-proxy HTTP, que je
+			porte d'une version en Python2 vers Python3.4, pour bénéficier
+			d'optimisations, de nouvelles fonctionnalités (autour de SSL par
+			exemple) et d'asyncio.</p>
+		</footer>
+	</div></section>
+	<section class="slide shout"><div>
+		<h2>Concurrence</h2>
+		<footer>
+			<p>Pour faire un serveur performant et fiable, on a une contrainte
+			fondamentale: gérer de nombreux clients simultanés sans baisse de
+			performance significative. Autrement dit: pouvoir gérer des
+			opérations concurrentes.</p>
+		</footer>
+	</div></section>
+	<section class="slide blue"><div>
+		<h2>Sans concurrence</h2>
+		<img src="images/01-non-concurrent.svg">
+		<footer>
+			<p>Sans concurrence: un deuxième client doit attendre que le
+			premier soit parti. C'est un souci, par exemple avec les
+			connexions keep-alive (un navigateur conserve une connexion
+			ouverte inactive pendant à peu près une minute).</p>
+		</footer>
+	</div></section>
+	<section class="slide blue"><div>
+		<h2>Plusieurs clients concurrents</h2>
+		<img src="images/02-concurrent-per-client.svg">
+		<footer>
+			<p>C'est déjà mieux: on peut gérer plusieurs clients en même
+			temps. Pour chaque nouvelle connexion, on va créer un nouveau fil
+			d'exécution qui traitera le client. Comme ça, un autre client qui
+			arrive peut être traité.</p>
+		</footer>
+	</div></section>
+	<section class="slide blue"><div>
+		<h2>Génération concurrente des pages</h2>
+		<img src="images/03-all-concurrent.svg">
+		<footer>
+			<p>Le précédent modèle ne nous permet pas de traiter deux requêtes
+			pour un client en simultané (<em>pipelining</em> avec HTTP/1.1,
+		    principe fondamental en HTTP/2).</p>
+		    <p>Ici, on va faire une tâche pour lire les requêtes dès qu'elles
+		    arrivent, pour chaque requête, on créé un fil d'exécution pour
+		    générer la réponse, et enfin, une troisième tâche écrit les
+		    réponses dès qu'elles sont prêtes à être envoyées).</p>
+		</footer>
+	</div></section>
+	<section class="slide blue"><div>
+		<h2>Python ?</h2>
+		<p>Quelles solutions pour faire de la concurrence avec Python ?</p>
+		<ul>
+		    <li class="next">Un processus par fil d'exécution: lent et coûteux</li>
+		    <li class="next">Threads: le GIL ☹</li>
+		    <li class="next"><em>Green threads</em></li>
+		</ul>
+		<footer>
+			<p>Pour faire de la concurrence en Python, on peut utiliser un
+			processus par fil d'exécution, mais on préfère éviter d'avoir trop
+			de processus sur le système (beaucoup de structures de données
+			dupliquées). Les threads règlent en partie le problème, mais ne
+			sont pas pratiques en Python à cause du
+			<a
+		  href="https://wiki.python.org/moin/GlobalInterpreterLock">GIL</a>,
+		    et aussi parce qu'un grand nombre de threads ne scale pas bien au
+		    niveau du système. On va utiliser une troisième solution, appelée
+		    <em>green threads</em>.</p>
+		</footer>
+	</div></section>
+	<section class="slide blue"><div>
+		<h2>Asyncio</h2>
+		<ul>
+		    <li><em>twisted</em> ou <em>gevent</em>, et
+		        aujourd'hui <mark>asyncio</mark> introduit dans Python 3.4,</li>
+		    <li class="next">Une <em>event loop</em> à la place du
+		        <em>scheduler</em> du kernel,</li>
+		    <li class="next">Meilleures performances et moins de latence.</li>
+		</ul>
+		<footer>
+			<p>Les green threads existaient déjà dans python, avec la
+			bibliothèque gevent, ou le framework twisted. On utilise une event
+			loop, qui lance/réveille des tâches qui attendaient qu'un événement
+			se produise (comme "un client tente de se connecter", "on peut lire
+			sur un socket"). On obtient de meilleures performances en
+			ordonnançant précisément nos <em>green threads</em>, alors que le
+			scheduler du kernel est lui généraliste.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide shout pink"><div>
+		<h2>Architecture</h2>
+		<footer>
+			<p>Faire une application fortement concurrente peut être
+			compliqué. Une bonne architecture aidera au développement et pour
+			les tests : tester le réseau sans se soucier de la concurrence (ou
+			l'inverse), ça serait pratique, non ?</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>Connection</h2>
+		<ul>
+		    <li><code>conn = Connection(socket)</code></li>
+		    <li>4 méthodes à surcharger:
+		        <ul>
+		            <li><code>request = conn.receive_request()</code></li>
+		            <li><code>conn.send_request(request)</code></li>
+		            <li><code>response = conn.receive_response()</code></li>
+		            <li><code>conn.send_response(response)</code></li>
+		        </ul>
+		    </li>
+		</ul>
+		<footer>
+			<p>On commence par l'objet <code>Connection</code>. Il se charge de
+			la plomberie réseau et d'abstraire un socket. On laisse 4 méthodes
+			non implémentées, qui seront surchargées pour un protocole donné et
+			qui transformeront des messages sur le réseau en objets Python et
+			vice-versa.</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>Frontend</h2>
+		<ul>
+		    <li><code>frontend = Frontend(HTTP(), '0.0.0.0', 80)</code></li>
+		    <li><code>frontend.start()</code> et <code>frontend.stop()</code></li>
+		    <li>Le reste se fait en fond:
+		        <ul>
+		            <li>accueil des nouveaux <code>Client</code>s,</li>
+		            <li>nettoyage après leur départ.</li>
+		        </ul>
+		    </li>
+		</ul>
+		<footer>
+			<p><code>Frontend</code> gère un socket passif qui attend
+			d'accepter des connexions, pour créer un objet
+			<code>Connection</code> et <code>Client</code>. Il va aussi
+			s'assurer que tout soit nettoyé au départ d'un client.</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>Client</h2>
+		<ul>
+		    <li><code>client = Client(connection)</code></li>
+		    <li>Ordonne les tâches <code>read_requests</code> et
+		        <code>write_responses</code>,</li>
+		    <li>Choisit un <code>Handler</code> qui va générer la réponse,</li>
+		    <li>Gère les erreurs :
+		        <ul>
+		            <li><code>500 Internal Server Error</code> si un handler
+		                lève une exception,</li>
+		            <li>interrompt les tâches si le client est déconnecté.</li>
+		        </ul>
+		    </li>
+		</ul>
+		<footer>
+			<p>Le <code>Client</code> fait de l'ordonnancement : on a deux
+			tâches <code>read_requests</code> et <code>write_responses</code>.
+			La première lit des requêtes dans une boucle "infinie", choisit un
+			<em>handler</em> pour chaque requête et exécute le
+			<code>handler</code> dans son propre fil d'exécution.</p>
+			<p>Il s'assure aussi de gérer les cas d'erreurs génériques: il
+			intercepte les exceptions, tente de répondre au client (ou ferme la
+			connexion) plutôt que faire crasher le serveur...</p>
+		</footer>
+	</div></section><section class="slide pink"><div>
+		<h2>Handler</h2>
+		<ul>
+		    <li><code>handler = Handler.issue(request)</code><br>
+		        si possible, retourne un objet qui traitera la requête,</li>
+		    <li><code>handler.handle()</code> prépare la réponse,</li>
+		    <li><code>handler.write_response()</code></li>
+		</ul>
+		<footer>
+			<p><code>Client.read_requests()</code> appelle
+			<code>Handler.issue()</code>. Par exemple, si on veut renvoyer un
+			fichier statique, <code>issue()</code> vérifie si le fichier
+			existe, si il n'existe pas, il répond None, sinon il retourne un
+			objet <code>handler</code>. <code>handler.handle()</code> est
+			exécuté dans sa propre tâche, et enfin,
+			<code>handler.write_response()</code> est appelé par la tâche
+			<code>client.write_response()</code> quand on est prêt
+			à transmettre la réponse.</p>
+		</footer>
+	</div></section><section class="slide pink"><div>
+		<h2>Protocol</h2>
+		<p><code>frontend = Frontend(<mark>HTTP()</mark>, '0.0.0.0',
+		    80)</code></p>
+		<ul>
+		    <li>Représente les aspects spécifiques au protocole :</li>
+		    <li>Liste de <code>request_handlers</code> pour
+		        <code>Client</code>,</li>
+		    <li><code>connection_factory()</code> pour
+		        <code>Frontend</code>.</li>
+		</ul>
+		<footer>
+			<p>Enfin, <code>Protocol</code> est une classe abstraite, dont une
+			implémentation concrète est passée à <code>Frontend</code>. Cette
+			version concrète contient des informations spécifiques au
+			protocole, comme la liste des handlers pour un protocole, ou une
+			fonction permettant de créer un objet <code>Connection</code> qui
+			implémente les méthodes abstraites vues plus tôt, pour le protocole
+			donné.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide shout green"><div>
+		<h2>Implémentation</h2>
+		<footer>
+			<p>Je vais maintenant aborder quelques points d'implémentation
+			particulièrement importants pour garantir la fiabilité (et la
+			performance) du serveur.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>Gestion de la mémoire</h2>
+		<ul>
+		    <li>Contrôler les fuites de mémoire :
+		        <code>gc.objects()</code>, <mark>objgraph</mark></li>
+		    <li class="next">asyncio: <b>surveiller la fin des tâches</b></li>
+		    <li class="next">Utilisation de <code>memoryview</code>s:
+		        <ul>
+		            <li>♥ une seule allocation, peu de copies</li>
+		            <li>☠ ajoute de la complexité (bas niveau)</li>
+		        </ul>
+		    </li>
+		<footer>
+			<p>La gestion de la mémoire est cruciale. Les fuites empêcheront
+			d'avoir un serveur qui peut tenir "longtemps" sans saturer la
+			mémoire. On peut utiliser objgraph pour découvrir l'origine d'une
+			fuite. Avec <code>asyncio</code> : le résultat d'une tâche peut
+			être une exception qui sera conservée en mémoire pendant toute la
+			durée d'exécution du programme pour être <em>logguée</em> par
+			asyncio. Enfin, <code>memoryview</code> est un mécanisme de python
+			très puissant permettant de limiter les allocations et les copies,
+			au prix d'une implémentation plus complexe.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>Optimisations</h2>
+		<ul>
+		    <li>Bas niveau, quand c'est justifié (ex: <code>splice()</code>,
+		        <code>sendfile()</code>),</li>
+		    <li class="next">Mettre en cache les opérations lentes
+		        (<code>@lru_cache</code>),</li>
+		    <li class="next">Utiliser les bonnes structures de données.</li>
+		</ul>
+		<footer>
+			<p>Si on veut vraiment gagner du temps, on peut essayer de
+			réimplémenter quelques parties en C, et/ou d'utiliser des appels
+			système optimisés comme <code>splice()</code>.</p>
+			<p>Utiliser <code>lru_cache</code> permet d'avoir gratuitement un
+			cache sur les fonctions lentes. Tandis qu'utiliser les bonnes
+			structures de données (ex: <code>heapq</code> plutôt que
+			</code>list</code>) peut faire gagner du temps.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>et se protéger des DoS</h2>
+		<ul>
+		    <li><b>Limites explicites</b> :
+		        <ul>
+		            <li>timeouts, taille des buffers,</li>
+		            <li>rate limiting: nombre de clients, de requêtes, de
+		                paquets.</li>
+		        </ul>
+		    </li>
+		</ul>
+		<footer>
+			<p>Pour se protéger des DoS, il faut faire toujours attention
+			à spécifier des limites explicites, comme des timeouts ou contrôler
+			la taille maximum d'un buffer. Par exemple, un utilisateur
+			malicieux pourrait ouvrir de nombreuses connexions et attendre
+			sans rien écrire, consommant de la mémoire pour rien. Les timeouts
+			sont importants en particulier pour les opérations asynchrones.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<p><img src="images/doc-limit.png" class="place"></p>
+	</div></section>
+
+	<section class="slide shout intro"><div>
+		<h2>Conclusion</h2>
+	</div></section>
+	<section class="slide intro"><div>
+		<h2>Récapitulatif</h2>
+		<ul>
+		    <li>Python a de nombreux avantages, avant de chercher bas niveau,</li>
+            <li>Une bonne architecture simplifie l'implémentation et les tests,</li>
+	        <li><em>Better safe than sorry</em> : tout vérifier,</li>
+            <li>Mise en production à venir : on va faire des benchmarks.</li>
+		</ul>
+	</div></section>
+	<section class="slide intro"><div>
+		<h2>Des questions ?</h2>
+		<ul>
+		    <li>N'hésitez pas à venir me voir, moi c'est Martin</li>
+            <li><code>martius@martiusweb.net</code></li>
+	        <li><code>https://marti.us</code></li>
+	        <li>Twitter, github, etc : <code>Martiusweb</code></li>
+	        <li>Lien vers cette présentation : <a
+	      href="https://marti.us/t/pyconfr-2014.html">https://marti.us/t/pyconfr-2014.html</a></li>
+		</ul>
+		<footer>
+			<p>Notes</p>
+		</footer>
+	</div></section>
+	<!-- p class="badge"><a href="https://github.com/shower/shower">Fork me on
+	 Github</a></p -->
+	<!--
+		To hide progress bar from entire presentation
+		just remove “progress” element.
+		-->
+	<div class="progress"><div></div></div>
+	<script src="../theme/shower.min.js"></script>
+</body>
+</html>

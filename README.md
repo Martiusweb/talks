@@ -4,7 +4,15 @@
 make slides. It uses assets located under the `theme/` directory.  It's all
 based on [shower](https://github.com/shower/shower).
 
-  * `pycon-fr-2014/`: [FR] Un serveur fiable avec python 3.4
+  * `pyconfr-2014/`: [FR] Un serveur fiable avec python 3.4
+
+# Usage
+
+Works better through an HTTP server, with python 3, use this command:
+
+    python3 -m http.server
+
+And go to http://localhost:8000/
 
 # Licence
 
