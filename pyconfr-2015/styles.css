@@ -1,0 +1,9 @@
+.slide.shout.intro h2 {
+    font-size: 90px;
+}
+.slide.shout.intro h2 small {
+    font-size: 0.8em;
+}
+.slide.shout h2 small {
+    font-size: 0.6em;
+}

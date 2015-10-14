@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Votre appli web et Python: de zéro au million d'utilisateurs - Martin Richard</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=680, user-scalable=no">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<link rel="stylesheet" href="../theme/styles/screen.css">
+	<link rel="stylesheet" href="../theme/styles/custom.css">
+	<link rel="stylesheet" href="styles.css">
+</head>
+<body class="list">
+	<!--
+		Debug class on <body> enables
+		cyan grid on slides
+		-->
+	<header class="caption">
+		<h1>Votre appli web et Python: de zéro au million d'utilisateurs</h1>
+		<p><a href="https://www.martiusweb.net/">Martin Richard</a>, alwaysdata</p>
+	</header>
+	<section class="slide shout intro"><div>
+		<h2>Votre appli web et Python:<br>
+		    <small>de zéro au million d'utilisateurs</small></h2>
+		<aside>
+		    Martin Richard <small>PyConFr - 17 Octobre 2015</small>
+		</aside>
+		<footer>
+			<p>Bonjour! Je suis ingénieur système chez alwaysdata, et
+			aujourd'hui je vais vous aider à créer une startup que Xavier Niel
+			voudra racheter, notamment car vous avez réussi à <em>scaler</em>
+			votre appli web pour accueillir des milions d'utilisateurs.</p>
+		</footer>
+	</div></section>
+	<section class="slide"><div>
+		<h2>Pourquoi cette présentation&nbsp;:</h2>
+		<p class="note">Quelques conseils pour débuter, quand on vise une large audience</p>
+		<ul>
+		    <li>Anciennement CTO d'une startup, sans expérience d'un projet large</li>
+		    <li class="next">Maintenant développeur système &amp; réseau chez alwaysdata, un hébergeur</li>
+		    <li class="next">Conseils pratiques pour se lancer, avant les problèmes techniques</li>
+		    <li class="next">Faire le tri entre les buzzwords</li>
+		</ul>
+		<footer>
+			<p>J'entends assez souvent des développeurs paniqués qui se
+			demandent comment développer une application <em>webscale</em>.
+			J'ai travaillé comme CTO d'une startup (= "le seul développeur"),
+			sans avoir d'expérience sur un projet qui devait accueillir de
+			nombreux utilisateurs.</p>
+			<p>J'ai passé tellement de temps à me documenter sur de
+			l'infrastructure par peur d'avoir des problèmes de charge, que je
+			suis devenu ingénieur système et réseau.</p>
+			<p>C'est donc l'ingénieur S&amp;R qui s'adresse au nouveau CTO de
+			startup: quelques conseils pour commencer, du tri dans les
+			buzzwords.</p>
+			<p>Vous êtes ici, vous vous intéressez certainement à Python: super
+			c'est un excellent choix, Python vous accompagnera un peu tout le
+			temps.</p>
+		</footer>
+	</div></section>
+	<section class="slide shout"><div>
+	    <h2>G I F E E<br>
+	        <small>Google Infra<br>For Everyone Else</small></h2>
+	    <footer>
+	        <p>En particulier, j'aimerai tordre le cou à la mode du
+	        <em>GIFEE</em>: la popularité du <em>cloud</em>,
+	        <em>containers</em> et autres <em>NoSQL</em> ont donné l'impression
+	        à tout le monde qu'il était nécessaire de designer des applis en
+	        microservices distribués, d'héberger tout ça sur un cluster de
+	        containers dans le cloud, et que les dévelopeurs devaient se mettre
+	        à faire de l'infra.</p>
+	    </footer>
+    </div></section>
+	<section class="slide cover h"><div>
+	    <p><img src="pictures/stack.png" alt="Tweet qui parle d'ETCD et Docker sur un cluster de Raspberry Pi"></p>
+	    <footer>
+	        <p>Parfois je vois des projets tellement complexes pour pas grand
+	        chose qu'on finit avec des architectures techniques aberrantes.
+	        Alors que l'infrastructure est une réponse à un besoin, qu'il
+	        s'agit d'identifier et de maîtriser.</p>
+	        <p>Je suggère qu'on s'attaque à ce besoin plutôt :</p>
+	        <p>Note: En vrai, le <a href="https://learnaddict.com/2015/08/03/raspberry-pi-stack-a-platform-for-learning-about-iot/">projet décrit dans ce tweet est très cool</a>.</p>
+	    </footer>
+	</div></section>
+	<section class="slide shout"><div>
+	    <h2>G <em>U</em> F E E<br>
+	        <small>Google <em>Uptime</em><br>For Everyone Else</small></h2>
+	    <footer>
+	        <p>Parlons plutôt de <em>GUFEE</em>: c'est à dire de viser un taux
+	        d'uptime élevé, comme 99,9%, même en cas de charge. Une grosse
+	        infra, c'est un moyen de gérer la charge, mais certainement pas
+	        celui le plus adapté à votre cas. Par exemple, StackOverflow
+	        tournait l'an dernier avec 25 serveurs (y compris hors production).
+	        - <a href="http://highscalability.com/blog/2014/7/21/stackoverflow-update-560m-pageviews-a-month-25-servers-and-i.html">source</a>.</p>
+	    </footer>
+    </div></section>
+	<section class="slide blue"><div>
+		<h2>Uptime&nbsp;?</h2>
+		<ul>
+		    <li>site qui répond</li>
+		    <li>la bonne réponse</li>
+		    <li>dans un délai acceptable</li>
+		</ul>
+		<footer>
+			<p>Un bon uptime, c'est d'avoir pour 1000 requêtes, 999 d'entre
+			elles qui vont obtenir une réponse, sans erreur (404, 500 ou même
+			une mauvaise information) et dans un délai acceptable pour
+			l'utilisateur. En pratique, c'est à vous de choisir les chiffres
+			d'un délai acceptable, du nombre d'erreurs que vous tolérez, ou
+			même de leur nature: un 404 sur la favicon est peut-être pas
+			vraiment un problème majeur.</p>
+		</footer>
+	</div></section>
+	<section class="slide blue"><div>
+	    <h2 style="display:none;">Comment&nbsp;?</h2>
+		<img src="pictures/comment.svg" alt="" class="place">
+		<footer>
+			<p>Alors comment fait-on ? On fait en sorte d'avoir un comportement
+			prévisible, <em>anticipable</em> même. Avec de la méthode et les
+			bons outils, on veut avoir une boucle vertueuse qui va permettre
+			d'être réactif en cas de problème, et donc finalement de pouvoir
+			faire évoluer le produit et son infrastructure en fonction de
+			du nombre d'utilisateurs et de la fréquentation. Pour que votre
+			application <em>scale</em>, le projet doit <em>scaler</em>: et
+			c'est essentiellement gérer la complexité progressivement.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide shout pink"><div>
+	    <h2>Le code</h2>
+	</div></section>
+	<section class="slide pink"><div>
+	    <h2>Quoi utiliser&nbsp;?</h2>
+	    <ul>
+	        <li>Objectif premier: simplicité</li>
+	        <li class="next"><em>Boring techs:</em> Technologies stables et populaires</li>
+	        <li class="next">Choisissez ce que vous connaissez en priorité</li>
+	        <li class="next">☠ modules/packages qui ne sont pas activement supportés</li>
+	        <li class="next">tests unitaires, semantic versioning</li>
+	    </ul>
+		<footer>
+		    <p>Votre premier objectif est donc la simplicité. Dans votre code,
+		    ça veut dire, être prêt à utiliser les <em>boring techs</em>:
+		    celles que tout le monde connait, que vous connaissez, qui sont
+		    stables et éprouvées. Python est pratiquement toujours un excellent
+		    choix.</p>
+		    <p>Faites très attention aux dépendances que vous ajoutez: les
+		    packages externes doivent être activement développés et supportés,
+		    avoir des tests unitaires (garants du comportement du module) et
+		    respecter le <em>semantic versioning</em>.</p>
+
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+	    <h2>Peur du monolithe&nbsp;?</h2>
+	    <ul>
+	        <li>Objectif <strike>second</strike> premier bis:
+	            réduire les points de couplage</li>
+	        <li class="next">un seul gros projet n'est pas un problème</li>
+	        <li class="next">organisation liée aux équipes: responsable des objets, de l'API</li>
+	        <li class="next">l'API est versionnée (semantic versioning)</li>
+	    </ul>
+		<footer>
+			<p>Avoir un monolithe n'est pas un problème, tant que son
+			architecture le rend "facile" à découper. C'est à dire qu'il doit
+			être organisé en fonction des responsabilités des développeurs.</p>
+			<p>Les regroupements doivent être sémantiques, pas techniques:
+			chaque groupe, est propriétaire d'un ensemble d'objets (et donc de
+			leur durée de vie) et expose une API de services pour y accéder
+			(pas des CRUD !).</p>
+			<p>Cette API doit être versionnée d'une manière ou d'une autre,
+			vous pouvez donner des versions à vos packages, et déprécier une
+			fonctionnalité en faveur d'une autre, mais il faut maintenir
+			l'existant le temps que les autres s'adaptent.</p>
+			<p>Conseil: indiquez explicitement le numéro de version dans
+			l'appel.</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+	    <h2>☠ couplage avec la BDD et l'ORM</h2>
+	    <ul>
+	        <li>c'est un détail d'implémentation !</li>
+	        <li class="next">Aucune logique métier, aucune sémantique</li>
+	        <li class="next">Donc, pas d'ORM dans la vue</li>
+	    </ul>
+		<footer>
+            <p>N'exposez pas les objets liés à l'ORM, ils exposent un détail
+            d'implémentation et des actions bien trop génériques.</p>
+            <p>L'utilisation de l'ORM dans la vue est la preuve d'une mauvaise
+            abstraction.</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+	    <h2>☠ couplage avec HTTP</h2>
+	    <ul>
+	        <li>c'est un détail d'implémentation !</li>
+	        <li class="next">Pas de session, d'utilisateur, de <code>GET</code>
+	            ou <code>POST</code> dans l'API.</li>
+	        <li class="next">Ce sont des variables globales !</li>
+	        <li class="next">Empêche l'utilisation de l'API dans des script
+	            (asynchrone)</li>
+	        <li class="next"><code>@login_required</code>: nope&nbsp;!</li>
+	    </ul>
+		<footer>
+            <p>Faites très attention : dans votre API métier, rien ne doit
+            supposer que vous êtes dans un environnement HTTP, l'accès aux
+            variables de session ou aux paramètres GET/POST sont comme l'accès
+            à des globales, et empêchent de réutiliser le code dans des
+            scripts (async, debug, etc).</p>
+            <p>Attention: ça peut arriver de manière subtile, par exemple avec
+            des décorateurs qui servent à vérifier des permissions d'accès.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide shout green"><div>
+	    <h2>La base de données</h2>
+	</div></section>
+
+	<section class="slide green"><div>
+		<h2>Marquer les lectures et les écritures</h2>
+		<ul>
+		    <li>Deux connexions à la base de données (une en lecture seule) (<code>config.DATABASES</code>)</li>
+		    <li class="next">Utilisez celle en lecture seule au maximum</li>
+		    <li class="next">...puis en écriture quand vous n'avez pas le choix</li>
+		    <li class="next">Complique un peu le développement</li>
+		    <li class="next">Facilite l'ajout de répliques (maître - esclave) et caches</li>
+		</ul>
+		<footer>
+			<p>Utilisez deux connexions à la base de données (deux entrées
+			<code>DATABASES</code> dans Django). Assurez-vous que ça fonctionne
+			en utilisant un utilisateur sans permissions d'écriture pour l'un
+			d'eux.</p>
+			<p>En faisant ça dès le début, vous pourrez voir quelles parties du
+			code peuvent utiliser un cache, ajouter des répliques pour les
+			lectures, et vous réduirez le couplage: ça ajoute un peu de
+			compléxité, pour certaines opérations complexes.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide green"><div>
+		<h2>Transactions, contraintes d'intégrité</h2>
+		<ul>
+		    <li>Dans l'implémentation de vos API</li>
+		    <li class="next">Transactions partout (lecture aussi)</li>
+		    <li class="next">Elles correspondent souvent à des fonctions</li>
+		    <li class="next">Niveau maximal d'isolation</li>
+		    <li class="next">Contraintes d'intégrité fortes</li>
+		</ul>
+		<footer>
+			<p>En utilisant les transactions partout, vous regroupez les
+			actions sur le plan <em>fonctionnel</em>. Une transaction devrait
+			logiquement couvrir la totalité d'une fonction de votre API (qui
+			correspond à une action métier).</p>
+			<p>Pour les écritures, privilégiez l'isolation maximum
+			(<code>serializable</code>) qui évite des bugs incompréhensibles,
+			et garantit la cohérence des données en cas de forte
+			concurrence.</p>
+			<p>De la même manière: utilisez correctement les contraintes
+			d'intégrité (unicité, clés étrangères, etc): il vaut mieux une
+			exception à l'origine du problème qu'une heure plus tard..</p>
+			<p>Voir: <a href="http://www.thedotpost.com/2015/06/neha-narula-consistency-and-candy-crush">Consistency and Candy-Crush: don't give up on serializability just yet</a>.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide green"><div>
+		<h2>Dénormalisation&nbsp;?</h2>
+		<ul>
+		    <li>Mise à l'échelle de l'organisation, pas technique</li>
+		    <li class="next">&lt; 2TB de données ? Problèmes d'implémentation, pas d'infra</li>
+		    <li class="next">dénormalisez les indexes avant les contraintes<br>
+		        ajoutez une indirection, un cache TODO schéma</li>
+		</ul>
+		<footer>
+			<p>La dénormalisation de votre base de données doit coincider avec
+			l'organisation de l'équipe. Par exemple, quand des développements
+			compliquent les migrations.</p>
+			<p>La dénormalisation pour cause de problème de perf est
+			généralement une erreur : si vos données peuvent tenir en RAM,
+			prennez un plus gros serveur et vérifiez vos indexes, vous pouvez
+			certainement optimiser plus simplement.</p>
+			<p>Quand vous dénormalisez, commencez par ajouter un niveau
+			d'indirection, plutôt que casser les contraintes d'intégrité. Par
+			exemple, vous pouvez créer des copies plus petites de tables très
+			longues.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide green"><div>
+		<h2>Vérification de la cohérence</h2>
+		<ul>
+		    <li>Scripts qui vérifient la cohérence des données</li>
+		    <li class="next">Exécution automatique planifiée</li>
+		    <li class="next">Liste les erreurs, plutôt qu'essayer de corriger</li>
+		    <li class="next">Vérifiez tout, en profondeur</li>
+		    <li class="next">Sourcez l'origine des données</li>
+		</ul>
+		<footer>
+			<p>Si vous manipulez beaucoup de données (catalogue de produits,
+			etc), lancez des scripts qui vérifient la cohérence des données en
+			profondeur automatiquement et régulièrement.</p>
+			<p>Ces scripts ne doivent pas nécessairement corriger, mais plutôt
+			lister les erreurs. Ça permet de travailler sur une copie de la
+			production, sans impacter les performances.</p>
+			<p>Pensez à enregistrer (peut-être dans une base de données annexe)
+			l'origine des données, leur date de modification et la cause:
+			ça permet de détecter des sources générant des erreurs, ou moins
+			fiables.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide shout blue"><div>
+	    <h2>Infrastructure et hébergement</h2>
+	</div></section>
+
+	<section class="slide cover h"><div>
+	    <img src="pictures/alwaysdata.png" src="alwaysdata">
+	    <footer>
+	        <p>Pourquoi chercher&nbsp;? Bon, je blague... plus sérieusement&nbsp;:</p>
+	    </footer>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2>Cloud ou pas cloud&nbsp;?</h2>
+		<ul>
+		    <li>IaaS: la fausse bonne idée</li>
+		    <li class="next">Vous n'avez pas besoin de resources en temps réel (€)</li>
+		    <li class="next">Trop de travail d'ops</li>
+		    <li class="next">Garanties discutables (<em>noisy neighbors</em>)</li>
+		</ul>
+		<footer>
+		    <p>Faites attention à l'IaaS: vous n'avez généralement pas besoin
+		    de lancer des VM à la volée pour palier à la variation de charge.
+		    Deux ou trois instances moyennes sur EC2 couteront plus cher qu'un
+		    bon dédié qui couvre largement vos besoins: les pics de traffic du
+		    20h sont une légende urbaine (vous n'êtes pas netflix).</p>
+			<p>En plus, ça ne vous épargne pas le travail d'ops ou les risques
+			liées à du vrai matériel, c'est souvent même pire.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2>IaaS non, PaaS oui</h2>
+		<ul>
+		    <li>Sous-traitez l'infrastructure et le sysadmin</li>
+		    <li class="next">Laissez-leur le monitoring et les astreintes</li>
+		    <li class="next">Heroku, Google App Engine, AWS Beanstalk, alwaysdata</li>
+		    <li class="next">Attention aux coûts et aux limites: testez</li>
+			<li class="next">Docker: attention aux fausses promesses, c'est le retour du sysadmin!</li>
+		</ul>
+		<footer>
+			<p>Je vous suggère de sous-traiter l'infrastructure et de vous
+			débarassez au maximum de tout ce qui touche à l'administration
+			systèmes. Même si vous savez faire, c'est du temps perdu qui vous
+			empêche de vous concentrer sur votre application.</p>
+			<p>J'aime bien le PaaS come Heroku, GAE, etc, mais ils vendent
+			souvent du scaling magique en échange de contraintes techniques
+			imposées. Sur une offre type infogérée, vous êtes plus libre: lisez
+			les docs, renseignez-vous, testez.</p>
+			<p>Les outils comme docker sont intéressants pour les ops, mais ne
+			débarrassent absolument pas du sysadmin, et rajoutent une couche de
+			complexité.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2>Evaluez vos besoins</h2>
+		<ul>
+		    <li>Calculs sur un coin de table, par exemple:</li>
+		    <li class="next">CPU: <em>QPS</em> = <em>nombre de coeurs</em> / (<em>temps de calcul</em>)<br>
+		        200 QPS = 4 coeurs / 20ms</li>
+		    <li class="next">RAM: <em>Taille de la BDD</em> + <em>Ram/requête</em> &times; <em>QPS</em><br>
+		        200 * 50MB = 10GB de RAM + 10GB &lt; 24GB (de la place pour cache IO)</li>
+		    <li class="next">Rarement limité par la bande passante mais plus la latence</li>
+		    <li class="next">Attention à l'IO sur le disque</li>
+		</ul>
+		<footer>
+			<p>Faites des calculs <em>sur un coin de table</em>, pour vous
+			donner une idée. Voir les exemples sur les slides. Ce sont des
+			exemples grossiers, 200 QPS c'est beaucoup (un mutualisé chez nous
+			c'est ~50QPS, assets inclus). Ça veut dire que vous pouvez tenir
+			avec Python pendant un moment.</p>
+			<p>En pratique, vous risquez plus d'être impacté par la latence
+			(réseau, disque): limitez les appels à des services distants.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide shout pink"><div>
+	    <h2>Le downtime, les bugs</h2>
+	</div></section>
+	<section class="slide pink"><div>
+	    <h2>Déploiement, backups</h2>
+	    <ul>
+	        <li>Remise en route rapide</li>
+	        <li class="next">Scripts de déploiement</li>
+	        <li class="next">Backups réguliers, réstauration testée</li>
+	        <li class="next">Logging moderne (<code>Sentry</code>, <code>ELK</code>)</li>
+	        <li class="next">Sondes &amp; et alertes</li>
+	    </ul>
+		<footer>
+		    <p>Pour finir, je vais parler rapidement des problèmes en
+		    production.</p>
+		    <p>Prennez le temps de vérifier vos scripts de déploiement et la
+		    restauration de vos backups. En cas de problème critique, vous
+		    pourrez redéployer votre application ailleurs. Et le moins de
+		    serveurs vous avez, le plus simple ça sera.</p>
+		    <p>Mettez en place des outils de surveillance de vos logs (comme
+		    ELK ou Sentry, qui collecte les exceptions dans votre code) et des
+		    alertes (envoi de SMS, déclenchement d'astreinte) en cas de
+		    problème.</p>
+		</footer>
+	</div></section>
+	<section class="slide intro"><div>
+		<h2>Conclusion</h2>
+		<ul>
+		    <li>Le scaling est un problème d'organisation avant d'être technique</li>
+            <li class="next">Viser la simplicité et l'évolution incrémentale</li>
+	        <li class="next">Python est <em>toujours</em> un bon choix.</li>
+		</ul>
+	</div></section>
+
+	<section class="slide intro"><div>
+		<h2>Des questions ?</h2>
+		<ul>
+		    <li>N'hésitez pas à venir me voir, moi c'est Martin</li>
+            <li><code>martius@martiusweb.net</code></li>
+	        <li><code>https://marti.us</code></li>
+	        <li>Twitter, github, etc: <code>Martiusweb</code></li>
+	        <li>Lien vers cette présentation: <a
+	      href="https://marti.us/t/pyconfr-2015/">https://marti.us/t/pyconfr-2015/</a></li>
+		</ul>
+		<footer>
+			<p>Typewriter etsy messenger bag fingerstache.</p>
+		</footer>
+	</div></section>
+	<!-- p class="badge"><a href="https://github.com/shower/shower">Fork me on
+	 Github</a></p -->
+	<!--
+		To hide progress bar from entire presentation
+		just remove “progress” element.
+		-->
+	<div class="progress"><div></div></div>
+	<script src="../theme/shower.min.js"></script>
+</body>
+</html>
