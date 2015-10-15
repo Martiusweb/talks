@@ -18,6 +18,7 @@
 .slide.shout.blue,  .slide.cover.blue  { background: #52A2DF; }
 .slide.shout.pink,  .slide.cover.pink  { background: #E85693; }
 .slide.shout.green, .slide.cover.green { background: #BADA55; }
+.slide.shout.white, .slide.cover.white { background: #FFFFFF; }
 
 /* custom colors */
 .full .progress div {
@@ -51,4 +52,13 @@
     color: #606060;
     font-size: .8em;
     padding-left: 15px;
+}
+
+/* skull bullet points */
+.slide ul > li.danger:before { color: #333; content: "☠   "; }
+.slide ul > li.andso:before { content: "➠   "; }
+
+/* mono font */
+.slide code, .slide kbd, .slide samp {
+    font-family: "hack", "Anka Coder",monospace;
 }

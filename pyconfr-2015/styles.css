@@ -7,3 +7,5 @@
 .slide.shout h2 small {
     font-size: 0.6em;
 }
+
+small.qps { color: #333; float: right; font-size: .7em; }
