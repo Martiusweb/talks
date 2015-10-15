@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>Votre appli web et Python: de zéro au million d'utilisateurs - Martin Richard</title>
+	<title>Votre appli web et Python&nbsp;: de zéro au million d'utilisateurs - Martin Richard</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=680, user-scalable=no">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
@@ -15,11 +15,11 @@
 		cyan grid on slides
 		-->
 	<header class="caption">
-		<h1>Votre appli web et Python: de zéro au million d'utilisateurs</h1>
+		<h1>Votre appli web en Python&nbsp;: de zéro au million d'utilisateurs</h1>
 		<p><a href="https://www.martiusweb.net/">Martin Richard</a>, alwaysdata</p>
 	</header>
 	<section class="slide shout intro"><div>
-		<h2>Votre appli web et Python:<br>
+		<h2>Votre appli web et Python&nbsp;:<br>
 		    <small>de zéro au million d'utilisateurs</small></h2>
 		<aside>
 		    Martin Richard <small>PyConFr - 17 Octobre 2015</small>
@@ -37,8 +37,7 @@
 		<ul>
 		    <li>Anciennement CTO d'une startup, sans expérience d'un projet large</li>
 		    <li class="next">Maintenant développeur système &amp; réseau chez alwaysdata, un hébergeur</li>
-		    <li class="next">Conseils pratiques pour se lancer, avant les problèmes techniques</li>
-		    <li class="next">Faire le tri entre les buzzwords</li>
+		    <li class="next">Conseils pratiques pour se lancer, faire le tri entre les buzzwords</li>
 		</ul>
 		<footer>
 			<p>J'entends assez souvent des développeurs paniqués qui se
@@ -49,12 +48,9 @@
 			<p>J'ai passé tellement de temps à me documenter sur de
 			l'infrastructure par peur d'avoir des problèmes de charge, que je
 			suis devenu ingénieur système et réseau.</p>
-			<p>C'est donc l'ingénieur S&amp;R qui s'adresse au nouveau CTO de
-			startup: quelques conseils pour commencer, du tri dans les
+			<p>C'est donc l'ingénieur S&amp;R qui s'adresse au  CTO de startup
+			débutant&nbsp;: quelques conseils pour commencer, du tri dans les
 			buzzwords.</p>
-			<p>Vous êtes ici, vous vous intéressez certainement à Python: super
-			c'est un excellent choix, Python vous accompagnera un peu tout le
-			temps.</p>
 		</footer>
 	</div></section>
 	<section class="slide shout"><div>
@@ -62,7 +58,7 @@
 	        <small>Google Infra<br>For Everyone Else</small></h2>
 	    <footer>
 	        <p>En particulier, j'aimerai tordre le cou à la mode du
-	        <em>GIFEE</em>: la popularité du <em>cloud</em>,
+	        <em>GIFEE</em>&nbsp;: la popularité du <em>cloud</em>,
 	        <em>containers</em> et autres <em>NoSQL</em> ont donné l'impression
 	        à tout le monde qu'il était nécessaire de designer des applis en
 	        microservices distribués, d'héberger tout ça sur un cluster de
@@ -77,7 +73,6 @@
 	        chose qu'on finit avec des architectures techniques aberrantes.
 	        Alors que l'infrastructure est une réponse à un besoin, qu'il
 	        s'agit d'identifier et de maîtriser.</p>
-	        <p>Je suggère qu'on s'attaque à ce besoin plutôt :</p>
 	        <p>Note: En vrai, le <a href="https://learnaddict.com/2015/08/03/raspberry-pi-stack-a-platform-for-learning-about-iot/">projet décrit dans ce tweet est très cool</a>.</p>
 	    </footer>
 	</div></section>
@@ -97,8 +92,9 @@
 		<h2>Uptime&nbsp;?</h2>
 		<ul>
 		    <li>site qui répond</li>
-		    <li>la bonne réponse</li>
-		    <li>dans un délai acceptable</li>
+		    <li class="next">la bonne réponse</li>
+		    <li class="next">dans un délai acceptable</li>
+		    <li class="next">= Stabilité !</li>
 		</ul>
 		<footer>
 			<p>Un bon uptime, c'est d'avoir pour 1000 requêtes, 999 d'entre
@@ -110,20 +106,6 @@
 			vraiment un problème majeur.</p>
 		</footer>
 	</div></section>
-	<section class="slide blue"><div>
-	    <h2 style="display:none;">Comment&nbsp;?</h2>
-		<img src="pictures/comment.svg" alt="" class="place">
-		<footer>
-			<p>Alors comment fait-on ? On fait en sorte d'avoir un comportement
-			prévisible, <em>anticipable</em> même. Avec de la méthode et les
-			bons outils, on veut avoir une boucle vertueuse qui va permettre
-			d'être réactif en cas de problème, et donc finalement de pouvoir
-			faire évoluer le produit et son infrastructure en fonction de
-			du nombre d'utilisateurs et de la fréquentation. Pour que votre
-			application <em>scale</em>, le projet doit <em>scaler</em>: et
-			c'est essentiellement gérer la complexité progressivement.</p>
-		</footer>
-	</div></section>
 
 	<section class="slide shout pink"><div>
 	    <h2>Le code</h2>
@@ -131,19 +113,19 @@
 	<section class="slide pink"><div>
 	    <h2>Quoi utiliser&nbsp;?</h2>
 	    <ul>
-	        <li>Objectif premier: simplicité</li>
-	        <li class="next"><em>Boring techs:</em> Technologies stables et populaires</li>
+	        <li>Objectif premier&nbsp;: simplicité</li>
+	        <li class="next"><em>Boring techs</em>&nbsp;: Technologies stables et populaires</li>
 	        <li class="next">Choisissez ce que vous connaissez en priorité</li>
 	        <li class="next">☠ modules/packages qui ne sont pas activement supportés</li>
-	        <li class="next">tests unitaires, semantic versioning</li>
+	        <li class="next">tests unitaires, <em>semantic versioning</em></li>
 	    </ul>
 		<footer>
 		    <p>Votre premier objectif est donc la simplicité. Dans votre code,
-		    ça veut dire, être prêt à utiliser les <em>boring techs</em>:
+		    ça veut dire, être prêt à utiliser les <em>boring techs</em>&nbsp;:
 		    celles que tout le monde connait, que vous connaissez, qui sont
 		    stables et éprouvées. Python est pratiquement toujours un excellent
 		    choix.</p>
-		    <p>Faites très attention aux dépendances que vous ajoutez: les
+		    <p>Faites très attention aux dépendances que vous ajoutez&nbsp;: les
 		    packages externes doivent être activement développés et supportés,
 		    avoir des tests unitaires (garants du comportement du module) et
 		    respecter le <em>semantic versioning</em>.</p>
@@ -153,17 +135,18 @@
 	<section class="slide pink"><div>
 	    <h2>Peur du monolithe&nbsp;?</h2>
 	    <ul>
-	        <li>Objectif <strike>second</strike> premier bis:
+	        <li>Objectif <strike>second</strike> premier bis&nbsp;:
 	            réduire les points de couplage</li>
-	        <li class="next">un seul gros projet n'est pas un problème</li>
-	        <li class="next">organisation liée aux équipes: responsable des objets, de l'API</li>
-	        <li class="next">l'API est versionnée (semantic versioning)</li>
+	        <li class="next">Les frameworks web (Django, etc) favorisent le couplage</li>
+	        <li class="next">organisation du code liée aux équipes</li>
+	        <li class="next">responsable de leurs objet et du stockage</li>
+	        <li class="next">responsable de leur API métier de haut niveau</li>
 	    </ul>
 		<footer>
 			<p>Avoir un monolithe n'est pas un problème, tant que son
 			architecture le rend "facile" à découper. C'est à dire qu'il doit
 			être organisé en fonction des responsabilités des développeurs.</p>
-			<p>Les regroupements doivent être sémantiques, pas techniques:
+			<p>Les regroupements doivent être sémantiques, pas techniques&nbsp;:
 			chaque groupe, est propriétaire d'un ensemble d'objets (et donc de
 			leur durée de vie) et expose une API de services pour y accéder
 			(pas des CRUD !).</p>
@@ -171,7 +154,7 @@
 			vous pouvez donner des versions à vos packages, et déprécier une
 			fonctionnalité en faveur d'une autre, mais il faut maintenir
 			l'existant le temps que les autres s'adaptent.</p>
-			<p>Conseil: indiquez explicitement le numéro de version dans
+			<p>Conseil&nbsp;: indiquez explicitement le numéro de version dans
 			l'appel.</p>
 		</footer>
 	</div></section>
@@ -193,20 +176,20 @@
 	    <h2>☠ couplage avec HTTP</h2>
 	    <ul>
 	        <li>c'est un détail d'implémentation !</li>
-	        <li class="next">Pas de session, d'utilisateur, de <code>GET</code>
-	            ou <code>POST</code> dans l'API.</li>
+	        <li class="next">Pas de session, de <code>GET</code> ou
+	            <code>POST</code> dans l'API</li>
 	        <li class="next">Ce sont des variables globales !</li>
 	        <li class="next">Empêche l'utilisation de l'API dans des script
 	            (asynchrone)</li>
-	        <li class="next"><code>@login_required</code>: nope&nbsp;!</li>
+	        <li class="next"><code>@login_required</code>&nbsp;: nope&nbsp;!</li>
 	    </ul>
 		<footer>
-            <p>Faites très attention : dans votre API métier, rien ne doit
+            <p>Faites très attention&nbsp;: dans votre API métier, rien ne doit
             supposer que vous êtes dans un environnement HTTP, l'accès aux
             variables de session ou aux paramètres GET/POST sont comme l'accès
             à des globales, et empêchent de réutiliser le code dans des
             scripts (async, debug, etc).</p>
-            <p>Attention: ça peut arriver de manière subtile, par exemple avec
+            <p>Attention&nbsp;: ça peut arriver de manière subtile, par exemple avec
             des décorateurs qui servent à vérifier des permissions d'accès.</p>
 		</footer>
 	</div></section>
@@ -231,7 +214,7 @@
 			d'eux.</p>
 			<p>En faisant ça dès le début, vous pourrez voir quelles parties du
 			code peuvent utiliser un cache, ajouter des répliques pour les
-			lectures, et vous réduirez le couplage: ça ajoute un peu de
+			lectures, et vous réduirez le couplage&nbsp;: ça ajoute un peu de
 			compléxité, pour certaines opérations complexes.</p>
 		</footer>
 	</div></section>
@@ -241,7 +224,6 @@
 		<ul>
 		    <li>Dans l'implémentation de vos API</li>
 		    <li class="next">Transactions partout (lecture aussi)</li>
-		    <li class="next">Elles correspondent souvent à des fonctions</li>
 		    <li class="next">Niveau maximal d'isolation</li>
 		    <li class="next">Contraintes d'intégrité fortes</li>
 		</ul>
@@ -254,7 +236,7 @@
 			(<code>serializable</code>) qui évite des bugs incompréhensibles,
 			et garantit la cohérence des données en cas de forte
 			concurrence.</p>
-			<p>De la même manière: utilisez correctement les contraintes
+			<p>De la même manière&nbsp;: utilisez correctement les contraintes
 			d'intégrité (unicité, clés étrangères, etc): il vaut mieux une
 			exception à l'origine du problème qu'une heure plus tard..</p>
 			<p>Voir: <a href="http://www.thedotpost.com/2015/06/neha-narula-consistency-and-candy-crush">Consistency and Candy-Crush: don't give up on serializability just yet</a>.</p>
@@ -265,16 +247,16 @@
 		<h2>Dénormalisation&nbsp;?</h2>
 		<ul>
 		    <li>Mise à l'échelle de l'organisation, pas technique</li>
-		    <li class="next">&lt; 2TB de données ? Problèmes d'implémentation, pas d'infra</li>
-		    <li class="next">dénormalisez les indexes avant les contraintes<br>
-		        ajoutez une indirection, un cache TODO schéma</li>
+		    <li class="next">&lt; 2TB de données&nbsp;? Problèmes d'implémentation, pas d'infra</li>
+		    <li class="next">dénormalisez les indexes avant les contraintes&nbsp;:<br>
+		        indirection, cache, ...</li>
 		</ul>
 		<footer>
 			<p>La dénormalisation de votre base de données doit coincider avec
 			l'organisation de l'équipe. Par exemple, quand des développements
 			compliquent les migrations.</p>
 			<p>La dénormalisation pour cause de problème de perf est
-			généralement une erreur : si vos données peuvent tenir en RAM,
+			généralement une erreur&nbsp;: si vos données peuvent tenir en RAM,
 			prennez un plus gros serveur et vérifiez vos indexes, vous pouvez
 			certainement optimiser plus simplement.</p>
 			<p>Quand vous dénormalisez, commencez par ajouter un niveau
@@ -290,7 +272,6 @@
 		    <li>Scripts qui vérifient la cohérence des données</li>
 		    <li class="next">Exécution automatique planifiée</li>
 		    <li class="next">Liste les erreurs, plutôt qu'essayer de corriger</li>
-		    <li class="next">Vérifiez tout, en profondeur</li>
 		    <li class="next">Sourcez l'origine des données</li>
 		</ul>
 		<footer>
@@ -301,7 +282,7 @@
 			lister les erreurs. Ça permet de travailler sur une copie de la
 			production, sans impacter les performances.</p>
 			<p>Pensez à enregistrer (peut-être dans une base de données annexe)
-			l'origine des données, leur date de modification et la cause:
+			l'origine des données, leur date de modification et la cause&nbsp;:
 			ça permet de détecter des sources générant des erreurs, ou moins
 			fiables.</p>
 		</footer>
@@ -322,8 +303,8 @@
 		<h2>Cloud ou pas cloud&nbsp;?</h2>
 		<ul>
 		    <li>IaaS: la fausse bonne idée</li>
-		    <li class="next">Vous n'avez pas besoin de resources en temps réel (€)</li>
-		    <li class="next">Trop de travail d'ops</li>
+		    <li class="next">Trop de travail de sysadmin et d'ops</li>
+		    <li class="next">Vous n'avez pas besoin de ressources en temps réel (€)</li>
 		    <li class="next">Garanties discutables (<em>noisy neighbors</em>)</li>
 		</ul>
 		<footer>
@@ -343,8 +324,8 @@
 		    <li>Sous-traitez l'infrastructure et le sysadmin</li>
 		    <li class="next">Laissez-leur le monitoring et les astreintes</li>
 		    <li class="next">Heroku, Google App Engine, AWS Beanstalk, alwaysdata</li>
-		    <li class="next">Attention aux coûts et aux limites: testez</li>
-			<li class="next">Docker: attention aux fausses promesses, c'est le retour du sysadmin!</li>
+		    <li class="next">Attention aux coûts et aux limites&nbsp;: testez</li>
+			<li class="next">Docker&nbsp;: attention aux fausses promesses, c'est le retour du sysadmin!</li>
 		</ul>
 		<footer>
 			<p>Je vous suggère de sous-traiter l'infrastructure et de vous
@@ -365,9 +346,9 @@
 		<h2>Evaluez vos besoins</h2>
 		<ul>
 		    <li>Calculs sur un coin de table, par exemple:</li>
-		    <li class="next">CPU: <em>QPS</em> = <em>nombre de coeurs</em> / (<em>temps de calcul</em>)<br>
+		    <li class="next">CPU&nbsp;: <em>QPS</em> = <em>nombre de coeurs</em> / (<em>temps de calcul</em>)<br>
 		        200 QPS = 4 coeurs / 20ms</li>
-		    <li class="next">RAM: <em>Taille de la BDD</em> + <em>Ram/requête</em> &times; <em>QPS</em><br>
+		    <li class="next">RAM&nbsp;: <em>Taille de la BDD</em> + <em>Ram/requête</em> &times; <em>QPS</em><br>
 		        200 * 50MB = 10GB de RAM + 10GB &lt; 24GB (de la place pour cache IO)</li>
 		    <li class="next">Rarement limité par la bande passante mais plus la latence</li>
 		    <li class="next">Attention à l'IO sur le disque</li>
@@ -379,21 +360,18 @@
 			c'est ~50QPS, assets inclus). Ça veut dire que vous pouvez tenir
 			avec Python pendant un moment.</p>
 			<p>En pratique, vous risquez plus d'être impacté par la latence
-			(réseau, disque): limitez les appels à des services distants.</p>
+			(réseau, disque)&nbsp;: limitez les appels à des services distants.</p>
 		</footer>
 	</div></section>
 
-	<section class="slide shout pink"><div>
-	    <h2>Le downtime, les bugs</h2>
-	</div></section>
-	<section class="slide pink"><div>
+	<section class="slide blue"><div>
 	    <h2>Déploiement, backups</h2>
 	    <ul>
 	        <li>Remise en route rapide</li>
 	        <li class="next">Scripts de déploiement</li>
 	        <li class="next">Backups réguliers, réstauration testée</li>
-	        <li class="next">Logging moderne (<code>Sentry</code>, <code>ELK</code>)</li>
-	        <li class="next">Sondes &amp; et alertes</li>
+	        <li class="next">Logging applicatif moderne (<code>Sentry</code>, <code>ELK</code>)</li>
+	        <li class="next">Sondes sur le métier &amp; et alertes</li>
 	    </ul>
 		<footer>
 		    <p>Pour finir, je vais parler rapidement des problèmes en
@@ -423,8 +401,8 @@
 		    <li>N'hésitez pas à venir me voir, moi c'est Martin</li>
             <li><code>martius@martiusweb.net</code></li>
 	        <li><code>https://marti.us</code></li>
-	        <li>Twitter, github, etc: <code>Martiusweb</code></li>
-	        <li>Lien vers cette présentation: <a
+	        <li>Twitter, github, etc&nbsp;: <code>Martiusweb</code></li>
+	        <li>Lien vers cette présentation&nbsp;: <a
 	      href="https://marti.us/t/pyconfr-2015/">https://marti.us/t/pyconfr-2015/</a></li>
 		</ul>
 		<footer>
