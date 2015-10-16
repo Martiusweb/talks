@@ -93,7 +93,6 @@
 		    <li>Pour chaque requête, une réponse</li>
 		    <li class="next">... et la bonne</li>
 		    <li class="next">... et dans un délai acceptable</li>
-		    <li class="next andso">stabilité !</li>
 		</ul>
 		<footer>
 			<p>Un bon uptime, c'est d'avoir pour 1000 requêtes, 999 d'entre
@@ -138,7 +137,7 @@
 	            réduire les points de couplage</li>
 	        <li class="next">Les frameworks web (Django, etc) favorisent le couplage</li>
 	        <li class="next">Organisation du code liée aux équipes</li>
-	        <li class="next">Responsable de leurs objet et du stockage</li>
+	        <li class="next">Responsable de leurs objets et du stockage</li>
 	        <li class="next">Responsable de leur API métier de haut niveau</li>
 	    </ul>
 		<footer>
@@ -219,12 +218,12 @@
 	</div></section>
 
 	<section class="slide green"><div>
-		<h2>Transactions, contraintes d'intégrité</h2>
+		<h2>Contraintes d'intégrité, transactions</h2>
 		<ul>
 		    <li>Dans l'implémentation de vos API</li>
+		    <li class="next">Contraintes d'intégrité fortes</li>
 		    <li class="next">Transactions partout (en lecture aussi)</li>
 		    <li class="next">Niveau maximal d'isolation</li>
-		    <li class="next">Contraintes d'intégrité fortes</li>
 		</ul>
 		<footer>
 			<p>En utilisant les transactions partout, vous regroupez les
@@ -269,7 +268,7 @@
 		<h2>Vérification de la cohérence</h2>
 		<ul>
 		    <li>Scripts qui vérifient la cohérence des données</li>
-		    <li class="next">Exécutés automatiquement (taches planifiées)</li>
+		    <li class="next">Exécutés automatiquement (tâches planifiées)</li>
 		    <li class="next">Qui listent les erreurs, plutôt qu'essayer de les corriger</li>
 		    <li class="next andso">En amont, sourcez l'origine des données</li>
 		</ul>
@@ -344,7 +343,7 @@
 	<section class="slide blue"><div>
 		<h2>Evaluez vos besoins</h2>
 		<ul>
-		    <li>Calculs sur un coin de table, par exemple:</li>
+		    <li>Calculs sur un coin de table, par exemple&nbsp;:</li>
 
 		    <li class="next">CPU&nbsp;: <em>QPS</em> = <em>nombre de coeurs</em> / (<em>temps de calcul</em>)<br>
 		        200 QPS = 4 coeurs / 20ms
@@ -352,7 +351,6 @@
 		    <li class="next">RAM&nbsp;: <em>Taille de la BDD</em> + <em>Ram/requête</em> &times; <em>QPS</em><br>
 		        200 * 50MB = 10GB de RAM + 10GB &lt; 24GB (de la place pour cache IO)</li>
 		    <li class="next">Bande passante: moins un problème que la latence</li>
-		    <li class="next">IO: Utilisez des disques SSD</li>
 		</ul>
 		<footer>
 			<p>Faites des calculs <em>sur un coin de table</em>, pour vous
@@ -365,28 +363,6 @@
 		</footer>
 	</div></section>
 
-	<section class="slide blue"><div>
-	    <h2>Déploiement, backups</h2>
-	    <ul>
-	        <li>Remise en route rapide</li>
-	        <li class="next">Scripts de déploiement</li>
-	        <li class="next">Backups réguliers, réstauration testée</li>
-	        <li class="next">Logging applicatif moderne (Sentry, ELK)</li>
-	        <li class="next">Sondes sur le métier &amp; et alertes</li>
-	    </ul>
-		<footer>
-		    <p>Pour finir, je vais parler rapidement des problèmes en
-		    production.</p>
-		    <p>Prennez le temps de vérifier vos scripts de déploiement et la
-		    restauration de vos backups. En cas de problème critique, vous
-		    pourrez redéployer votre application ailleurs. Et le moins de
-		    serveurs vous avez, le plus simple ça sera.</p>
-		    <p>Mettez en place des outils de surveillance de vos logs (comme
-		    ELK ou Sentry, qui collecte les exceptions dans votre code) et des
-		    alertes (envoi de SMS, déclenchement d'astreinte) en cas de
-		    problème.</p>
-		</footer>
-	</div></section>
 	<section class="slide intro"><div>
 		<h2>Conclusion</h2>
 		<ul>
