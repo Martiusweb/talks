@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Streaming vidéo dans le navigateur - Martin Richard</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=680, user-scalable=no">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<link rel="stylesheet" href="../theme/styles/screen.css">
+	<link rel="stylesheet" href="../theme/styles/custom.css">
+	<link rel="stylesheet" href="styles.css">
+</head>
+<body class="list">
+	<!--
+		Debug class on <body> enables
+		cyan grid on slides
+		-->
+	<header class="caption">
+		<h1>Streaming vidéo dans le navigateur</h1>
+		<p><a href="https://www.martiusweb.net/">Martin Richard</a>, alwaysdata</p>
+	</header>
+	<section class="slide shout intro"><div>
+		<h2>Streaming vidéo dans le navigateur</h2>
+		<aside>
+		    Martin Richard <small>UPMC - 30 Novembre 2015</small>
+		</aside>
+		<footer>
+			<p>Typewriter etsy messenger bag fingerstache.</p>
+		</footer>
+	</div></section>
+	<section class="slide agenda"><div>
+		<h2>Dans cette présentation&nbsp;:</h2>
+		<p class="note">Comment diffuser de la vidéo dans un navigateur&nbsp;?</p>
+		<ol>
+		    <li>Le navigateur</li>
+		    <li>Streaming de contenu avec HTTP</li>
+		    <li>Streaming en temps réel avec WebRTC</li>
+		</ol>
+		<footer>
+			<p>Notes</p>
+		</footer>
+	</div></section>
+	<section class="slide shout"><div>
+		<h2>Le navigateur</h2>
+	</div></section>
+	<section class="slide blue"><div>
+	    <h2>Dans cette partie&nbsp;:</h2>
+		<ol>
+		    <li>Définition d'un navigateur</li>
+		    <li>Afficher de la vidéo</li>
+		    <li>Contraintes du système</li>
+		    <li>Contraintes du réseau</li>
+		</ol>
+	</div></section>
+	<section class="slide blue"><div>
+	    <h2>Définition d'un navigateur</h2>
+		<ul>
+		    <li>Parcours le web: ensemble de documents multimédias, liés entre eux par des <em>hyperliens</em></li>
+		    <li>Une ressource est identifiée par une URL</li>
+		    <li>Le navigateur télécharge et exécute des applications</li>
+		    <li>Qui tournent sur une couche d'abstraction de la plateforme (OS)</li>
+		    <li>Dans un environnement sécurisé</li>
+		</ul>
+		<footer>
+			<p>Un navigateur est grosso-modo un <em>runtime</em> comme Java ou
+			Flash. Il permet de télécharger des applications, écrites dans des
+			langages de haut niveau, et les exécute sur une machine virtuelle
+			(couche logicielle qui fait le pont entre le haut niveau applicatif
+			et la plateforme sous-jacente (l'OS).</p>
+			<p>Une grosse contrainte pour le navigateur, c'est de garantir la
+			sécurité de ses utilisateurs&nbsp;: le code JS n'est pas fiable, et
+			de nombreux malwares tentent d'accéder à l'ordinateur à travers le
+			navigateur.</p>
+		</footer>
+	</div></section>
+	<section class="slide blue"><div>
+		<div style="text-align:center"><img src="images/network-overview.png" alt=""></div>
+	</div></section>
+	<section class="slide blue"><div>
+		<h2>Afficher de la vidéo dans le navigateur</h2>
+		<ul>
+		    <li>Avant, les plugins comme Flash (propriétaire)</li>
+		    <li>Aujourd'hui: <code>&lt;video&gt;</code></li>
+		<footer>
+			<p></p>
+		</footer>
+	</div></section>
+	<section class="slide blue"><div>
+		<h2>Afficher de la vidéo dans le navigateur</h2>
+		<pre>
+            <code>&lt;video loop controls src="public/horseplay-2.webm"&gt;&lt;/video&gt;</code>
+            <code>&lt;video controls&gt;</code>
+            <code>  &lt;source src="public/horseplay-2.webm"&gt;</code>
+            <code>  &lt;source src="public/horseplay-2.mp4"&gt;</code>
+            <code>&lt;/video&gt;</code>
+		</pre>
+		<footer>
+			<p>En quelques lignes de code, ça donne ça.</p>
+		</footer>
+	</div></section>
+	<section class="slide cover w"><div>
+        <video loop controls src="https://paul.cx/public/horseplay-2.webm"
+        style="max-width: 100%; margin: 0 auto;">
+        </video>
+	</div></section>
+	<section class="slide blue"><div>
+		<h2>Contraintes du système</h2>
+		<ul>
+		    <li>Performances (CPU, GPU)</li>
+		    <li>Codecs disponibles</li>
+		    <li>Compatibilité hardware (acquisition, affichage)</li>
+		    <li>Batterie</li>
+		    <li>C'est la jungle&nbsp;!</li>
+		</ul>
+	</div></section>
+	<section class="slide blue"><div>
+		<h2>Contraintes du réseau</h2>
+		<ul>
+		    <li>Bande passante</li>
+		    <li>Latence</li>
+		    <li>Perte de paquets (fiabilité)</li>
+		    <li>QoS, Firewalls, IPv4, NAT</li>
+		    <li>C'est le Far-West&nbsp;!</li>
+		</ul>
+	</div></section>
+	<section class="slide blue"><div>
+		<div style="text-align:center"><img src="images/network-topo.png" alt=""></div>
+	</div></section>
+
+	<section class="slide shout pink"><div>
+		<h2>Streaming de contenu avec HTTP</h2>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>Dans cette partie&nbsp;:</h2>
+		<ol>
+		    <li>TCP</li>
+		    <li>HTTP/1.1</li>
+		    <li>HTTP/2</li>
+		    <li>TLS</li>
+		</ol>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>TCP</h2>
+		<ul>
+			<li>Protocole de streams full-duplex</li>
+			<li>Contrôle de congestion (<code>cwnd</code>,
+			    <code>rwnd</code>)</li>
+			<li>Ordre des données garanti</li>
+			<li>Arrivée garantie</li>
+			<li class="andso"><em>Head-of-Line blocking</em></li>
+		</ul>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>HTTP/1.1&nbsp;: une requête</h2>
+		<pre>
+		    <code>GET /resource HTTP/1.1</code>
+		    <code>Host: www.martiusweb.net</code>
+		    <code>Connection: Keep-Alive</code>
+		</pre>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>HTTP/1.1&nbsp;: une réponse</h2>
+		<pre>
+		    <code>HTTP/1.1 200 OK</code>
+		    <code>Connection: Keep-Alive</code>
+		    <code>Date: Tue, 27 Oct 2015 15:02:49 GMT</code>
+            <code>Content-Type: text/html</code>
+            <code>Content-Length: 22796</code>
+		</pre>
+	</div></section>
+	<section class="slide pink"><div>
+	    <h2>Avantages</h2>
+	    <ul>
+	        <li>Simple et facile à utiliser</li>
+	        <li>Ports 80 et 443, toujours ouverts</li>
+	        <li>Extensible et versatile&nbsp;:
+	            <ul>
+	                <li>Cache et requêtes conditionnelles</li>
+	                <li><code>Range-Request</code></li>
+	                <li><code>Encoding: Chunked</code></li>
+	            </ul>
+	        </li>
+	    </ul>
+	</div></section>
+	<section class="slide pink"><div>
+	    <h2>Inconvénients</h2>
+	    <ul>
+	        <li>Mauvaises implémentations de HTTP partout</li>
+	        <li>Limité par TCP (<em>Head of Line</em>, <em>slow-start</em>,
+	            <em>handshake</em>)</li>
+	        <li>Synchronicité des messages (personne n'implémente le pipelining correctement)</li>
+	        <li>Le chargement de la page retarde le chargement de la vidéo</li>
+	        <li>Bloated: on envoie des tonnes de données inutiles</li>
+	        <li>Utilisation inutile de gzip dans certains cas, etc</li>
+	    </ul>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2><code>Range-Request</code>&nbsp;: oui, tu peux&nbsp;!</h2>
+		<pre>
+		    <code>HTTP/1.1 200 OK</code>
+		    <code><strong>Accept-Ranges: bytes</strong></code>
+		    <code>...</code>
+		</pre>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2><code>Range-Request</code>&nbsp;: requête</h2>
+		<pre>
+		    <code>GET /video.webm HTTP/1.1</code>
+		    <code><strong>Range: bytes=0-4096</strong></code>
+		    <code>...</code>
+		</pre>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2><code>Range-Request</code>&nbsp;: réponse</h2>
+		<pre>
+		    <code>HTTP/1.1 <strong>206 Partial Content</strong></code>
+		    <code><strong>Content-Length: 4096</strong></code>
+		    <code><strong>Content-Range: bytes 0-4096/381467554</strong></code>
+		    <code>...</code>
+		</pre>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2><code>Range-Request</code></h2>
+		<ul>
+		    <li>Téléchargement de fragments de fichiers</li>
+		    <li>Multi-homing (téléchargement depuis plusieurs sources)</li>
+		    <li>Permet des bidouilles pour faire de l'adaptive bitrate</li>
+		    <li>...avant/avec MSE (API haut niveau qui permet de pousser des chunks dans un renderer <code>&lt;video&gt;</code>)&nbsp;?</li>
+		</ul>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>HTTP/2: Résoudre les problèmes</h2>
+		<ul>
+			<li>Multiplexage sur un seul stream TCP</li>
+			<li>Priorisation des flux (mais bon)</li>
+			<li>Built-in compression</li>
+			<li>Stateful: pas besoin de renvoyer des infos redondantes à chaque requête</li>
+			<li>Compatible HTTP/1.1, donc <code>Range-Request</code>s</li>
+			<li>Un peu un gros hack par les ports 80/443...</li>
+		</ul>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>Pour la vidéo&nbsp;?</h2>
+		<ul>
+		    <li>Meilleure réactivité globale</li>
+		    <li>Au niveau des chunks de vidéo&nbsp;:</li>
+		    <li>Réduction de la latence (un seul socket TCP = pas de
+		        <em>slow-start</em>, etc)</li>
+		    <li>Priorisation des chunks à afficher rapidement</li>
+		</ul>
+	</div></section>
+	<section class="slide shout green"><div>
+		<h2>Streaming en temps réel avec WebRTC</h2>
+		<footer>
+			<p>Typewriter etsy messenger bag fingerstache.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>Dans cette partie&nbsp;:</h2>
+		<ol>
+		    <li>Objectifs de WebRTC</li>
+		    <li>MediaStream</li>
+		    <li>Signaling</li>
+		    <li>RTCPeerConnection: ICE, STUN, TURN, Nat traversal</li>
+		    <li>RTCDataChannel: SCTP over UDP</li>
+		</ol>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>Objectifs de WebRTC</h2>
+		<ul>
+		    <li>Adresser le problème du temps réel (<em>timeliness</em> plutôt
+		    que <em>reliability</em>)</li>
+		    <li>Fournir une API en Javascript permettant d'acquerir et
+		        manipuler du contenu multimédia</li>
+		    <li>Fournir un ensemble de protocoles standards et
+		        inter-opérables</li>
+		</ul>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>WebRTC, un gros framework</h2>
+		<div style="text-align:center"><img src="images/webrtc.png" alt=""></div>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>MediaStream</h2>
+		<div style="text-align:center"><img src="images/webrtc-MediaStream.png" alt=""></div>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>MediaStream</h2>
+        <pre><code>navigator.getUserMedia(constraints, onStream, onError);</code>
+        <code>function onStream(stream) {</code>
+        <code>  var video = document.querySelector('video');</code>
+        <code>  video.src = window.URL.createObjectURL(stream);</code>
+        <code>}</code></pre>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>RTCPeerConnection</h2>
+		<ul>
+		    <li>API javascript</li>
+		    <li>Canal de communication <em>full-duplex</em> avec un pair</li>
+		    <li>Basé sur les protocoles SRTP et SRTCP (over UDP)</li>
+		    <li>Chiffré avec DTLS (<em>Datagram TLS</em>)</li>
+		    <li>Le navigateur s'occupe de l'<em>adaptive bitrate</em></li>
+		</ul>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>RTCDataChannel</h2>
+		<ul>
+		    <li>API javascript</li>
+		    <li>Canal de communication pour des données arbitraires</li>
+		    <li>Orienté message</li>
+		    <li>Garanties optionnelles&nbsp;:
+		        <ul>
+		            <li>ordonné ou non</li>
+		            <LI>délivraison garantie ou non</li>
+		        </ul>
+		    </li>
+		    <li>basé sur SCTP</li>
+		</ul>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>SCTP</h2>
+		<ul>
+		    <li>Normalement au niveau de TCP ou UDP</li>
+		    <li>Mais encapsulé dans le l'UDP pour traverser les NAT</li>
+		</ul>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>Etablir une connexion: le problème des NAT</h2>
+		<ul>
+		    <li>Distribue dans un réseau local du trafic depuis Internet</li>
+		    <li>Les pairs ne connaissent pas leur IP publique</li>
+		    <li>Les NAT ne savent pas comment router les paquets</li>
+		    <li>les NAT ont une table de correspondance privé/public</li>
+		</ul>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>NAT</h2>
+		<div style="text-align:center"><img src="images/udp-nat.png" alt=""></div>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>STUN</h2>
+		<ul>
+		    <li><em>Session Traversal Utility for NAT</em></li>
+		    <li>Indique à un client sont IP publique</li>
+		    <li>Force le NAT à maintenir la correspondace avec des
+		        heartbeats</li>
+		</ul>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>STUN</h2>
+		<div style="text-align:center"><img src="images/udp-stun.png" alt=""></div>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>TURN</h2>
+		<ul>
+		    <li><em>Traversal Using Relay around NAT</em></li>
+		    <li>Quand le NAT est défectueux</li>
+		    <li>Ou le trafic UDP est bloqué</li>
+		    <li>Passage par un relai public</li>
+		    <li>Couteux, car plus <em>peer-to-peer</em></li>
+		</ul>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>TURN</h2>
+		<div style="text-align:center"><img src="images/udp-turn.png" alt=""></div>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>ICE</h2>
+		<ul>
+		    <li><em>Interactive Connectivity Establishment</em></li>
+		    <li>Négociation du mode de communication&nbsp;:
+		        <ul>
+		            <li>Obtention de l'IP publique</li>
+		            <li>Tests de connectivité</li>
+		            <li>Paquets <em>Heartbeat</em> (<em>Keep Alive</em>)</li>
+		            <li>Public &gt; STUN &gt; TURN</li>
+		        </ul>
+		    </li>
+		</ul>
+	</div></section>
+	<section class="slide green"><div>
+		    <h2>Comment deux pairs se trouvent ? Le <em>signaling</em></h2>
+		<ul>
+		    <li>Le <em>signaling</em> ne fait pas partie de WebRTC</li>
+		    <li>Canal utiliser pour mettre en relation les pairs</li>
+		    <li>Négociation d'une offre</li>
+		</ul>
+	</div></section>
+	<section class="slide green"><div>
+		<h2><em>Signaling</em></h2>
+		<div style="text-align:center"><img src="images/signaling.png" alt=""></div>
+	</div></section>
+
+	<section class="slide intro"><div>
+		<h2>Bibliographie</h2>
+		<ul>
+            <li>Les RFCs:
+                <ul>
+                    <li>HTTP/1.1&nbsp;: <strike>2616</strike>, 7230-7235, HTTP/2&nbsp;: 7540</li>
+                    <li>WebRTC&nbsp;: 7478</li>
+                    <li>ICE&nbsp;: 5245, STUN&nbsp;: 5389,
+                        TURN&nbsp;: 5766, SDP&nbsp;: 4566,
+                        DTLS&nbsp;: 6347, SCTP&nbsp;: 4960, SRTP&nbsp;: 3711</li>
+                    <li>WebRTC API côté W3C&nbsp;: <a href="http://www.w3.org/TR/webrtc/">www.w3.org/TR/webrtc/</a></li>
+                </ul>
+            </li>
+        </ul>
+	</div></section>
+	<section class="slide intro"><div>
+		<h2>Bibliographie</h2>
+        <p><img src="images/hpbncover.jpg" alt="" style="margin: 10px; float: left">
+        <em>High Performance Browser Networking</em><br>
+        Ilya Grigorik, O'Reilly Media, 2013</p>
+        <p class="note">C'est aussi le crédit images</p>
+	</div></section>
+	<section class="slide intro"><div>
+		<h2>Des questions ?</h2>
+		<ul>
+            <li><code>martius@martiusweb.net</code></li>
+	        <li><code>https://marti.us</code></li>
+	        <li>Twitter, github, etc: <code>Martiusweb</code></li>
+	        <li>Lien vers cette présentation: <a
+	      href="https://marti.us/t/upmc-network/">https://marti.us/t/upmc-network/</a></li>
+		</ul>
+	</div></section>
+	<!-- p class="badge"><a href="https://github.com/shower/shower">Fork me on
+	 Github</a></p -->
+	<!--
+		To hide progress bar from entire presentation
+		just remove “progress” element.
+		-->
+	<div class="progress"><div></div></div>
+	<script src="../theme/shower.min.js"></script>
+</body>
+</html>
