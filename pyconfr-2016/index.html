@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>asynctest: Easier unit testing for asyncio code - Martin Richard</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=680, user-scalable=no">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<link rel="stylesheet" href="../theme/styles/screen.css">
+	<link rel="stylesheet" href="../theme/styles/custom.css">
+	<link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles/pojoaque.css">
+    <script src="highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body class="list">
+	<!--
+		Debug class on <body> enables
+		cyan grid on slides
+		-->
+	<header class="caption">
+		<h1>asynctest: Easier unit testing for asyncio code</h1>
+		<p><a href="https://www.martiusweb.net/">Martin Richard</a>, alwaysdata</p>
+	</header>
+	<section class="slide shout intro"><div>
+		<h2><code>asynctest</code><br>
+		    <small>Easier unit testing for asyncio code</small></h2>
+		<aside>
+		    Martin Richard <small>PyConFr - 15 October 2016</small>
+		</aside>
+		<footer>
+			<p>Hi! I'm Martin and I'm going to present <code>asynctest</code>:
+			a library which adds features to the standard package
+			<code>unittest</code>. A unit test is an automated comparision
+			between expected outcome and the actual result of a given case
+			(=code path), but you know that right.</p>
+		</footer>
+	</div></section>
+	<section class="slide"><div>
+		<h2>In a nutshell:</h2>
+		<p class="note">We will discover unit testing and asynctest with an
+		example.</p>
+		<ul>
+		    <li>Why write unit tests,</li>
+		    <li class="next">built a test case from an almost real-world
+		        example,</li>
+		    <li class="next">show you how <code>asynctest</code> adds to
+		        asyncio support to <code>unittest</code>.</li>
+		</ul>
+		<footer>
+			<p>I started <code>asynctest</code> at alwaysdata, because I was
+			always writting boilerplate code for asyncio. I'd like to show how
+			it can also help you to tests your asyncio code, and why I really
+			like unit tests.</p>
+		</footer>
+	</div></section>
+	<!-- section class="slide cover h white"><div>
+	    <p><img src="pictures/stack.png" alt="alt text"></p>
+	    <footer>
+	    <p>picture slide</p>
+	    </footer>
+	</div></section -->
+
+	<section class="slide shout pink"><div>
+	    <h2>Why and when you want unit tests</h2>
+	</div></section>
+	<section class="slide pink"><div>
+	    <h2>you want reliability</h2>
+	    <ul>
+	        <li>reliability = 1 / anxiety (said <em>someone at Google</em>)</li>
+	        <li class="next">gives you confidence in your work, using
+	            facts</li>
+	        <li class="next">detect obvious mistakes like typos</li>
+	        <li class="next">prevent regressions during refactoring</li>
+			<!--<li class="next danger">and </li>-->
+	        <li class="next andso">you're less affraid of changing code
+	            (especially old and complex code),</li>
+	    </ul>
+		<footer>
+		    <p>Reliability is the converse of anxiety: this is something you
+		    want in your daily job. Unit tests give you confidence that what
+		    you did works, and let you try things without being affraid of
+		    introducing bugs. It allows you to sleep well and fight monstrous
+		    code.</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+	    <h2>you want consistency</h2>
+	    <ul>
+	        <li>exerce your API by using it in your tests</li>
+	        <li class="next">spot inconcistencies, coupling and side
+	            effects</li>
+	        <li class="next">assess the useability and readability of your
+	            code</li>
+	        <li class="next">assert backward compatibility</li>
+	        <li class="next andso">you'll write a better API</li>
+	    </ul>
+		<footer>
+			<p>You test your API (class and function definitions). When writing
+			unit tests, your will use your code for the first time and discover
+			if it is enjoyable to use or boring. You will see if a function
+			does something else than what is expected (because isolating tests
+			cases will be hard), and see if something is missing in your API
+			(getters to the internal state, etc).</p>
+			<p>You will also prevent breaking changes which can affect your
+			coleagues code.</p>
+			<p>Unit tests make your a good buddy to your colleagues which leads
+			to more free beer!</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+	    <h2>you want convenience</h2>
+	    <ul>
+	        <li>don't rely on running a scenario manually (prone to
+	            mistakes)</li>
+	        <li class="next">avoid the need to start a whole large project to
+	            test a tiny thing</li>
+	        <li class="next">isolate your code from other's: don't suffer of
+	            other's mistakes</li>
+	        <li class="next andso">saves you from toil and boring work</li>
+	    </ul>
+		<footer>
+            <p>While writting tests take time, manually testing the same stuff
+            again and again takes even more time. Plus you will make mistakes,
+            or stumble upon other's bugs).</p>
+		</footer>
+	</div></section>
+
+	<section class="slide shout green"><div>
+	    <h2>Example (code!)</h2>
+	</div></section>
+
+	<section class="slide green"><div>
+		<h2>Where are the tests located?</h2>
+		<pre><code>.
+├── piedpiper
+│   ├── __init__.py
+│   ├── network.py
+│   └── ...
+├── <mark>tests</mark>
+│   ├── <mark>__init__.py</mark>
+│   ├── <mark>test_network.py</mark>
+│   └── ...
+├── README
+└── setup.py</code></pre>
+		<footer>
+			<p>We created a package called <code>tests</code> next to the
+			package to test. Usually, we will somehow mirror the structure of
+			the package in the tests.</p>
+			<p>This structure allows to use the package in the test as an
+			imported isolated piece of code, but we can predict where it is
+			(and customize <code>sys.path</code> for instance)./<p>
+		</footer>
+	</div></section>
+
+	<section class="slide green"><div>
+		<h2><code>network.py</code></h2>
+		<pre><code class=="python">class ResourceDownloader:
+    def __init__(self, url):
+	    ...
+
+    def get_parsed_url(self):
+	    ...
+
+    async def download(self):
+	    ...
+
+    def refresh(self, period, loop=None):
+	    ...
+		</code></pre>
+		<footer>
+			<p>Our package implements a class called
+			<code>ResourceDownloader</code>. This is the one we want to
+			test. It implements tree public methods. The actual code is
+			somewhere on github.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide green"><div>
+		<h2><code>test_network.py</code></h2>
+		<pre><code class="python">import asynctest, piedpier.network
+
+@asynctest.lenient
+class Test_ResourceDownloader_get_parsed_url(
+        asynctest.TestCase):
+
+    def test_get_parsed_url(self):
+        ...
+		</code></pre>
+		<footer>
+			<p>In <code>test_network.py</code>, we create a child
+			<code>TestCase</code> class, implementing a method in which we will
+			put the test (<code>test_get_parsed_url</code>). It's up to you to
+			choose how you want to organize your cases, but I like to have
+			a class per feature ("functional area"): here, a class per
+			function.</p>
+			<p>A function defines a case you want to test. Usually, the
+			function name can be a sentence telling what you test. For instance:
+			<em>test_get_parsed_url_returns_parsed_url</em> but here it is
+			redundant.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide green"><div>
+		<h2><code>TestCase</code></h2>
+		<pre><code class="python">case = Test_ResourceDownloader_get_parsed_url(
+	"test_get_parsed_url")
+case.run()</code></pre>
+	    <ul>
+	        <li>Instance of a test case: situation we want to test and verify
+	        the outcome</li>
+	        <li>We use a test runner which creates and runs an instance for
+	        each <code>test_*</code> method</li>
+	    </ul>
+		<footer>
+			<p><code>TestCase</code> provides all you need to run the test, and
+			display the result, here, we create an instance of test case, the
+			first parameter is the name of the function which implement the
+			test case we want to run.</p>
+			<p>Usually, we use a test runner: its a program which uses
+			introspection to find all the methods with a name starting with
+			<code>test_</code> in a child of <code>TestCase</code>, creates an
+			instance for each case, and display a report of the tests
+			outcome.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide green"><div>
+		<h2><code>test_network.py</code></h2>
+		<pre><code class="python">import asynctest, piedpier.network
+
+<mark>@asynctest.lenient</mark>
+class Test_ResourceDownloader_get_parsed_url(
+        asynctest.TestCase):
+
+    def test_get_parsed_url(self):
+        ... </code></pre>
+		<ul>
+		    <li>Disable checks specifics to asyncio</li>
+	    </ul>
+		<footer>
+			<p>So let's go back to our example. I added a decorator here,
+			called asynctest.lenient. It disables some checks useful when
+			testing asyncio code, but our first case doesn't use asyncio
+			yet.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide green"><div>
+		<h2><code>test_network.py</code></h2>
+		<pre><code class="python">def test_get_parsed_url(self):
+	downloader = ResourceDownloader("http://piedpiper.com/foo")
+	result = downloader.get_parsed_url()
+
+	<mark>self.assertEqual</mark>(result,
+	                  ("piedpiper.com", 80, "/foo", False))
+        </code></pre>
+		<footer>
+			<p>This is a simple test case: I try my function, and express some
+			assertions that must be True so the test can succeed.</p>
+			<p><code>self.assertEqual()</code> raises an <code>AssertionError</code> if the
+			condition is not satisfied. There are many other assertion
+			functions provided by <code>TestCase</code>. A good rule of thumb
+			is to test all the possible input and output combinations,
+			according to the "contact" stated in the documentation.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide green"><div>
+		<h2><code>test_network.py</code></h2>
+		<pre><code class="python">def test_get_parsed_url_errors(self):
+	downloader = ResourceDownloader("invalid address")
+
+	with <mark>self.assertRaises</mark>(ValueError):
+	    result = downloader.get_parsed_url()
+        </code></pre>
+		<footer>
+			<p>This second example shows how we can test the behavior of an
+			erroneous case. We want to ensure that an exception of type
+			<code>ValueError</code> is raised. This is important because the
+			exception is part of our API: a test not only assert that the code
+			does what is expected in good cases, but also has a predictible
+			outcome in case of bogus use.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide green"><div>
+		<h2>Run it!</h2>
+		<pre class="smaller"><code class="nohighlight">$ PYTHONPATH=. python -m unittest tests
+
+.F
+======================================================================
+FAIL: <mark>test_get_parsed_url_errors</mark> (test_network.Test_ResourceDownloader_refresh)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  (...)
+  File ".../tests/test_network.py", line 39, in test_get_parsed_url_errors
+    downloader.get_parsed_url()
+<mark>AssertionError: ValueError not raised</mark>
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.014s
+
+FAILED (failures=1)
+		<footer>
+			<p>Now we can invoke the test runner. <code>PYTHONPATH=.</code>
+			tells the python interpreter where to look for our package,
+			<code>-m unittest</code> invokes the standard <code>unittest</code>
+			package (which has a "main" which is the test runner). The last
+			argument is the package in which our test cases are located.</p>
+			<p>The result here shows that our second test failed, and gives us
+			some details.</p>
+			<p>The first dot correspond to the first test, which ran
+			successfully.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide green"><div>
+		<h2>More tests</h2>
+		<pre><code class="python">def test_get_parsed_url(self):
+	downloader = ResourceDownloader("http://piedpiper.com/foo")
+	result = downloader.get_parsed_url()
+
+	self.assertEqual(result,
+	                  ("piedpiper.com", 80, "/foo", False))
+
+	downloader = ResourceDownloader("https://piedpiper.com/")
+	result = downloader.get_parsed_url()
+
+	self.assertEqual(result,
+	                  ("piedpiper.com", 443, "/", True))
+        </code></pre>
+		<footer>
+			<p>Now let's do more torough testing. We want to test other
+			typologies of URLs. We can duplicate the code, but it's not very
+			clean. Especially since we can have a lot of cases to test.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide green"><div>
+		<pre><code class="python">import collections
+Case = collections.namedtuple("Case", "url expected")
+
+def test_get_parsed_url(self):
+    cases = {
+        "simple http URL": Case(
+            url="http://piedpiper.com/",
+            expected=('piedpiper.com', 80, '/', False)),
+        "simple https URL": Case(
+            url="https://piedpiper.com/",
+            expected=('piedpiper.com', 443, '/', True)),
+        "URL with port": Case(
+            url="http://piedpiper.com:8080/",
+            expected=('piedpiper.com', 8080, '/', False)),
+        ...
+    }
+        </code></pre>
+		<footer>
+			<p>In order to make things more organised, I created
+			a <code>Case</code> type and listed all the cases to be tested and
+			the expected result in a dict, indexed with a small description of
+			what the <code>Case</code> wants to test.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide green"><div>
+		<pre><code class="python">import collections
+Case = collections.namedtuple("Case", "url expected")
+
+def test_get_parsed_url(self):
+    ...
+
+    for name, case in cases.items():
+        with <mark>self.subTest(name=name, url=case.url)</mark>:
+	        downloader = ResourceDownloader(case.url)
+	        result = downloader.get_parsed_url()
+	        self.assertEqual(result, case.expected)
+        </code></pre>
+		<footer>
+			<p>I can now iterate over this dict to test all these cases. I used
+			<code>self.subTest</Code>, which allows to document what is tested.
+			This is useful as in case of failure, the description will be
+			printed, and I will quickly now which subtest failed. You can use
+			the arguments you want.</p>
+			<p>We acheived something nice here: code is factorised and adding
+			a case is easy, without sacrifying legibility.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide shout blue"><div>
+	    <h2>Example with asyncio</h1>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2><code>ResourceDownloader.download</code></h2>
+		<pre class="smaller"><code class="python">async def download(self):
+        """
+        Download the resource and updates :attr:`data`.
+
+        The value of :attr:`data` is returned.
+
+        When the resource URL is invalid, :exc:`ValueError` is raised.
+        When the response from the server can not be parsed or is not usable,
+        :exc:`RuntimeError` is raised.
+
+        Other standard exceptions may be raised (:exc:`OSError`, etc).
+        """</code></pre>
+		<footer>
+		    <p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2><code>ResourceDownloader.download</code></h2>
+		<pre class="smaller"><code class="python">async def download(self):
+        <mark class="next">host, port, query, ssl = self.get_parsed_url()</mark>
+        reader, writer = await <mark class="next">asyncio.open_connection(host, port, ssl=ssl)</mark>
+
+        try:
+            <mark class="next">writer.write(self._build_request(host, query))</mark>
+            response_headers = <mark class="next">await reader.readuntil(b"/r/n/r/n")</mark>
+            code, payload_size = self._parse_response_headers(response_headers)
+
+            if code != 200:
+                raise RuntimeError(
+                    "Server answered with unsupported code {}".format(code))
+
+            self.data = <mark class="next">await reader.read(payload_size)</mark>
+        finally:
+            <mark class="next">writer.close()</mark>
+
+        return self.data</code></pre>
+		<footer>
+		    <p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2>A first test of asynchronous code</h2>
+		<pre><code class="python">class Test_ResourceDownloader_download(asynctest.TestCase):
+
+    async def test_download_resource(self):
+        downloader = ResourceDownloader(
+            "http://piedpiper.com/compression")
+        payload = await downloader.download()
+
+        self.assertEqual(payload, b"MiddleOut")
+		</code></pre>
+		<ul>
+		    <li class="next danger">what if <code>piedpiper.com</code>
+		        is slow or unavailable?</li>
+		</ul>
+		<footer>
+		    <p>Runs the coroutine on a loop, a new loop for each test. Here, no
+		    <code>lenient</code> decorator: the test checks that the loop ran
+		    during the test(avoid mistakes when using <code>yield
+		    from</code>).</p>
+		</footer>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2>Introducing <mark>mocks</mark></h2>
+		<ul>
+		    <li>Replacement or functions, classes or objects</li>
+		    <li class="next"><em>mock</em> ("act like") the object they
+		        replace</li>
+		    <li class="next">their behavior can be configurated</li>
+		    <li class="next">provide assertion methods to check how the mock
+		        was used</li>
+		</ul>
+		<footer>
+			<p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2>Use <code>asynctest.mock.Mock</code></h2>
+		<pre><code class="python">def create_mocks():
+	reader = asynctest.mock.Mock(<mark class="next">asyncio.StreamReader</mark>)
+    writer = asynctest.mock.Mock(asyncio.StreamWriter)
+
+    reader.<mark class="next">read.return_value</mark> = b"MiddleOut"
+    reader.<mark class="next">readuntil.return_value</mark> = b"HTTP/1.1 200 OK\r\n..."
+
+    return reader, writer
+</code></pre>
+		<footer>
+			<p></p>
+		</footer>
+    </div></section>
+	<section class="slide blue"><div>
+	    <h2>Mocks</h2>
+		<ul>
+		    <li class="next">provide the same interface as the class
+		        <code>StreamReader</code>,</li>
+		    <li class="next">each method and attribute is a mock,</li>
+		    <li class="next">a function call on a mock returns a mock, unless
+		        configurated,</li>
+		    <li class="next"><code>asynctest</code> mocks coroutines
+		        automatically.</li>
+		</ul>
+		<footer>
+			<p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2><code>asynctest.mock.patch</code></h2>
+		<pre><code class="python">async def test_download_resource(self):
+    downloader = ResourceDownloader(
+        "http://piedpiper.com/compression")
+
+    with asynctest.mock.patch(
+            "asyncio.open_connection",
+            side_effect=create_mocks):
+        payload = await downloader.download()
+
+    self.assertEqual(payload, b"MiddleOut")
+</code></pre>
+		<footer>
+			<p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2>as a decorator</h2>
+		<pre><code class="python">@patch("asyncio.open_connection", side_effect=create_mocks)
+async def test_download_resource(self, open_connection_mock):
+    ...
+</code></pre>
+<ul>
+    <li class="next">can decorate a <code>TestCase</code>, or any function or
+        coroutine</li>
+    <li class="next"><code>patch.multiple</code>, <code>patch.dict</code>,
+        <code>patch.object</code></li>
+    <li class="next">advanced features: control the scope of the patch in
+        a coroutine</li>
+</ul>
+		<footer>
+			<p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide shout pink"><div>
+	<h2>Last example:<br>Let's control time!</h2>
+	</div></section>
+
+	<section class="slide pink"><div>
+	    <h2><code>setUp</code>, <code>tearDown</code>,
+	        <code>addCleanup</code></h2>
+	    <pre><code class="python">class Test_ResourceDownloader_refresh(asynctest.TestCase):
+	<mark class="next">async def setUp(self):</mark>
+        self.downloader = ResourceDownloader("http://piedpiper.com/")
+        self.call_count = 0
+
+        def set_data_value(*args, **kwargs):
+            self.downloader.data = "Payload {}".format(self.call_count)
+            self.call_count += 1
+            return self.downloader.data
+
+        patch = asynctest.mock.patch.object(
+            self.downloader, "download", side_effect=set_data_value)
+        patch.start()
+        <mark class="next">self.addCleanup</mark>(patch.stop)</code></pre>
+		<footer>
+		    <p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide pink"><div>
+	    <h2></h2>
+	    <pre><code class="python">class Test_ResourceDownloader_refresh(asynctest.TestCase):
+    async def tearDown(self):
+        self.downloader.refresh(None)
+        self.downloader = None</code></pre>
+        <ul>
+            <li>Called for each test case,</li>
+            <li class="next">only runs if the test did not fail,</li>
+            <li class="next">cleanup functions are always called,</li>
+            <li class="next">can be functions or coroutines.</li>
+        </ul>
+		<footer>
+		    <p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide pink"><div>
+	    <h2>Deal with scheduled callbacks</h2>
+	    <pre><code class="python"><mark class="next">@asynctest.fail_on(active_handles=True)</mark>
+class Test_ResourceDownloader_refresh(<mark class="next">asynctest.ClockedTestCase</mark>):
+    async def test_refresh(self):
+        self.assertEqual("Payload 0", self.downloader.data)
+        self.downloader.refresh(5)
+
+        <mark class="next">await self.advance(5)</mark>
+        # 5 seconds after refresh(5) was set, data is updated
+        self.assertEqual("Payload 1", self.downloader.data)
+
+        await self.advance(10)
+        # Updated two more times.
+        self.assertEqual(<mark class="next">"Payload 3"</mark>, self.downloader.data)
+</code></pre>
+		<footer>
+		    <p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide intro"><div>
+		<h2>More about <code>asynctest</code></h2>
+		<ul>
+		    <li>Future:
+		    <ul>
+		        <li>support of asynchronous iterators and context managers,
+		        <li class="next">mocking of IO (sockets, files, pipes, ...),</li>
+                <li class="next">support of Windows' proactor (maybe?).</li>
+            </ul></li>
+            <li class="next"><code>pytest-asyncio</code>: less features, but you
+                can use asynctest with it,</li>
+            <li class="next">Users: alwaysdata, folks at Mozilla and Cisco,
+                you?</li>
+		</ul>
+	</div></section>
+
+	<section class="slide intro"><div>
+		<h2>Your turn!</h2>
+		<ul>
+		    <li>Write how to run tests in your <code>README</code> or <code>CONTRIBUTING</code> file</li>
+            <li class="next">Make sure tests are easy to run:<br>
+                <code>$ git clone</code><br>
+                <code>$ python -m unittest tests</code> (or <code>nose</code>,
+                <code>pytest</code>, <code>tox</code>, ...)</li>
+            <li class="next">You can now enable travis-ci!</li>
+		</ul>
+	</div></section>
+
+	<section class="slide intro"><div>
+		<h2>Thanks</h2>
+		<ul>
+	        <li><a href="https://asynctest.readthedocs.org">asynctest.readthedocs.org</a> and <a href="https://github.com/Martiusweb/asynctest">github.com/Martiusweb/asynctest</a></li>
+		    <li>I'm Martin, come talk to me!</li>
+            <li><code>martius@martiusweb.net</code></li>
+	        <li><code>https://marti.us</code></li>
+	        <li>Twitter, github, etc&nbsp;: <code>Martiusweb</code></li>
+	        <li>slides are at: <a
+	      href="https://marti.us/t/pyconfr-2016/">https://marti.us/t/pyconfr-2016/</a></li>
+		</ul>
+		<footer>
+			<p>Typewriter etsy messenger bag fingerstache.</p>
+		</footer>
+	</div></section>
+	<!-- p class="badge"><a href="https://github.com/shower/shower">Fork me on
+	 Github</a></p -->
+	<!--
+		To hide progress bar from entire presentation
+		just remove “progress” element.
+		-->
+	<div class="progress"><div></div></div>
+	<script src="../theme/shower.min.js"></script>
+</body>
+</html>
