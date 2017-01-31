@@ -1,0 +1,38 @@
+.slide.shout.intro h2 {
+    font-size: 90px;
+}
+.slide.shout.intro h2 small {
+    font-size: 0.8em;
+}
+.slide.shout h2 small {
+    font-size: 0.6em;
+}
+
+small.qps { color: #333; float: right; font-size: .7em; }
+
+.slide pre code {
+    font-size: 20px;
+    line-height: 1.2;
+}
+
+.slide pre.smaller code  {
+    font-size: 16px;
+}
+
+.full .slide mark.next {
+    visibility: visible;
+    background: none;
+}
+
+.full .slide mark.next.active {
+    visibility: visible;
+    background: #FAFAC4;
+}
+
+.slide pre code.hljs {
+    overflow-x: initial;
+}
+
+.slide pre mark {
+    padding: 2px 0px;
+}

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>asynctest: Easier unit testing for asyncio code - Martin Richard</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=680, user-scalable=no">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<link rel="stylesheet" href="../theme/styles/screen.css">
+	<link rel="stylesheet" href="../theme/styles/custom.css">
+	<link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles/pojoaque.css">
+    <script src="highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body class="list">
+	<!--
+		Debug class on <body> enables
+		cyan grid on slides
+		-->
+	<header class="caption">
+		<h1>asynctest: Easier unit testing for asyncio code</h1>
+		<p><a href="https://www.martiusweb.net/">Martin Richard</a>, alwaysdata</p>
+	</header>
+	<section class="slide shout intro"><div>
+		<h2><code>asynctest</code><br>
+		    <small>Easier unit testing for asyncio code</small></h2>
+		<aside>
+		    Martin Richard <small>FOSDEM - 05 February 2017</small>
+		</aside>
+		<footer>
+			<p>Hi! I'm Martin and I'm going to present <code>asynctest</code>:
+			a library which adds features to the standard package
+			<code>unittest</code>.</p>
+		</footer>
+	</div></section>
+	<section class="slide"><div>
+		<h2>In a nutshell:</h2>
+		<p class="note">Presentation of asynctest and how it helps you testing
+		asyncio code.</p>
+		<ul>
+		    <li>Enhancements to <code>TestCase</code> and related features</li>
+		    <li class="next">Transpartent mocking of coroutine functions</li>
+		    <li class="next">advanced features (loop clock control, selector
+		        mocking)</li>
+		</ul>
+		<footer>
+			<p>I started to work on <code>asynctest</code> at alwaysdata, while
+			writting and HTTP reverse-proxy with <code>asyncio</code>.</p>
+			<p>I'll focus on the features of <code>asynctest</code>, so I will
+			assume that most of you are familiar with <code>unittest</code> and
+			<code>asyncio</code>.
+		</footer>
+	</div></section>
+
+	<section class="slide shout pink"><div>
+	    <h2>TestCase</h2>
+	</div></section>
+	<section class="slide pink"><div>
+	    <h2><code>TestCase</code> and the loop</h2>
+        <ul>
+            <li><code>asynctest.TestCase</code> overrides
+            <code>unittest.TestCase</code></li>
+            <li class="next">creates a loop for each test function</li>
+            <li class="next">accessible in the tests via
+            <code>self.loop</code></li>
+        </ul>
+		<footer>
+		    <p><code>asynctest</code> provides a <code>TestCase</code> class
+		    which inherits <code>unittest.TestCase</code>. It will handle the
+		    loop creation and disposal for you: it creates a new loop for each
+		    test and closes it for you, whatever is the outcome of the
+		    test.</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+	        <h2><code>TestCase</code> support of coroutines</h2>
+		<pre><code class="python">import asynctest, piedpiper
+
+class Test_MyFeature(asynctest.TestCase):
+    <mark class="next">async def setUp</mark>(self):
+        ...
+
+    <mark class="next">async def tearDown</mark>(self):
+        ...
+
+    <mark class="next">async def test_a_case</mark>(self):
+        self.server = await piedpiper.start_server()
+        <mark class="next">self.addCleanup</mark>(self.server.close_and_wait_closed)
+		</code></pre>
+		<footer>
+		    <p>Thanks to <code>TestCase</code>, <code>setUp</code>,
+		    <code>tearDown</code>, clean-up and test methods can be
+		    coroutines.</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+	    <h2><code>TestCase</code>: advices</h2>
+        <ul>
+            <li>always use coroutines for <code>setUp()</code> and
+                <code>tearDown()</code>,</li>
+            <li class="next">⚠ <code>setUpClass()</code> and
+                <code>tearDownClass()</code> can't be coroutines</li>
+        </ul>
+		<footer>
+		    <p>You should always use coroutines for <code>setUp()</code> and
+		    <code>tearDown()</code>: functions are supported to be compatible
+		    with <code>unittest</code>, but it easy to forget an
+		    <code>await</code> before <code>super().setUp()</code>.</p>
+		    <p>since the loop is created for a test, <code>setUpClass()</code>
+		    and co. can't be coroutines.</p>
+		</footer>
+	</div></section>
+    <section class="slide pink"><div>
+	    <h2>Bring your own loop</h2>
+		<pre><code class="python">import asyncio, asynctest, piedpiper
+
+class Test_MyFeature(asynctest.TestCase):
+    # Don't issue a new loop for each test, use the result of
+    # asyncio.get_event_loop()
+    <mark class="next">use_default_loop = True</mark>
+
+    def setUpClass(cls):
+        # set your customized loop
+        <mark>asyncio.set_event_loop(piedpiper.get_loop())</mark>
+
+		</code></pre>
+		<footer>
+		    <p>You can force <code>TestCase</code> to use the loop returned by
+		    <code>asyncio.get_event_loop()</code>, which allows you to take
+		    control of the loop used for the tests.</p>
+		    <p>Most of the time, you'll only need to set your custom policy in
+		    setUpClass() though.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide pink"><div>
+		<h2>did the loop run?</h2>
+		<pre><code class="python">import asynctest, asyncio, piedpiper
+
+class Test_MyFeature(asynctest.TestCase):
+    <span class="next"><mark>@asyncio.coroutine</mark></span>
+    def test_old_style_coroutine(self):
+        data = yield from piedpiper.compress()
+        self.assertIsSmall(data)
+
+    <mark class="next">@asynctest.fail_on(unused_loop=False)</mark>
+    def test_a_feature_without_async(self):
+        self.assertTrue("middleOut", piedpiper.method())
+		</code></pre>
+		<footer>
+			<p>By default, <code>TestCase</code> ensure that the loop ran
+			during the test (excluding <code>setup()</code> and
+			<code>tearDown()</code>). It's useful with old-style coroutines,
+			which are not coroutines unless properly decorated.</p>
+			<p>However, you may want to explicitly disable this check,
+			sometimes.</p>
+		</footer>
+	</div></section>
+
+	    <section class="slide shout green"><div>
+	    <h2>ClockedTestCase: control time</h2>
+	</div></section>
+
+	<section class="slide green"><div>
+		<h2><code>ClockedTestCase</code></h2>
+		<pre><code class="python">import asynctest, piedpiper
+
+class Test_PeriodicRefresh(asynctest.TestCase):
+    async def test_refreshed(self):
+        downloader = piedpiper.Downloader()
+        self.assertEqual("nb_calls: 0", downloader.data)
+        downloader.refresh(5)
+
+        <mark class="next">await self.advance(5)</mark>
+        # 5 seconds after refresh(5) was set, data is updated
+        self.assertEqual("nb_calls: 1", downloader.data)
+
+        <mark class="next">await self.advance(10)</mark>
+        # Updated two more times.
+        self.assertEqual("nb_calls: 3", downloader.data)
+		</code></pre>
+		<footer>
+			<p><code>ClockedTestCase</code> will replace the loop clock by
+			a clock we control. It will never advance by itself, but we can
+			make it move forward in a blink.</p>
+			<p>It sounds obvious, but advance simulates the time passing,
+			rather that making the clock just right to the given time, meaning
+			that scheduled callbacks are not late and work as expected.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>did we left dandling callbacks?</h2>
+		<pre><code class="python">import asynctest, asyncio, piedpiper
+
+<mark>@asynctest.fail_on(active_handles=True)</mark>
+class Test_MyFeature(asynctest.TestCase):
+    async def test_with_a_callback(self):
+        self.loop.call_later(1, piedpiper.callback)
+        # this test will fail, as this callback
+        # will not run during the test
+
+    async def test_with_a_cancelled_callback(self):
+        handle = self.loop.call_later(1, piedpiper.callback)
+        handle.cancel()
+        # this test will not fail
+        </code></pre>
+		<footer>
+			<p><code>You can ask <code>TestCase</code> to check that scheduled
+			callbacks are executed before the end of the test.</p>
+			<p>If a callback is cancelled, the test runs fine.</p>
+		</footer>
+	</div></section>
+
+	<section class="slide shout blue"><div>
+	    <h2>Mocking</h2>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2>An example</h2>
+		<pre class="smaller"><code class="python">async def download(self):
+    <mark class="next">host, port, query, ssl = self.get_parsed_url()</mark>
+    reader, writer = await <mark class="next">asyncio.open_connection(host, port, ssl=ssl)</mark>
+
+    try:
+        <mark class="next">writer.write(self._build_request(host, query))</mark>
+        response_headers = <mark class="next">await reader.readuntil(b"/r/n/r/n")</mark>
+        code, payload_size = self._parse_response_headers(response_headers)
+
+        if code != 200:
+            raise RuntimeError(
+                "Server answered with unsupported code {}".format(code))
+
+        self.data = <mark class="next">await reader.read(payload_size)</mark>
+    finally:
+        <mark class="next">writer.close()</mark>
+
+    return self.data</code></pre>
+		<footer>
+		    <p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2>coroutine-aware mocks</h2>
+		<pre><code class="python">def create_mocks():
+	reader = asynctest.mock.Mock(<mark class="next">asyncio.StreamReader</mark>)
+    writer = asynctest.mock.Mock(asyncio.StreamWriter)
+
+    reader.<mark class="next">read.return_value</mark> = b"MiddleOut"
+    reader.<mark class="next">readuntil.return_value</mark> = b"HTTP/1.1 200 OK\r\n..."
+
+    return reader, writer
+</code></pre>
+		<footer>
+			<p></p>
+		</footer>
+    </div></section>
+	<section class="slide blue"><div>
+	    <h2>Mocks</h2>
+		<ul>
+		    <li><code>asynctest.mock.Mock()</code> uses its
+		    <code>spec</code> and detects coroutines,</li>
+		    <li class="next">a coroutine function is mocked with
+		        <code>asynctest.mock.CoroutineMock()</code></li>
+		    <li class="next">⚠ doesn't detect function returning futures</li>
+		</ul>
+		<footer>
+			<p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2>using <code>asynctest.mock.patch</code></h2>
+		<pre><code class="python"><mark>@patch("asyncio.open_connection", side_effect=create_mocks)</mark>
+async def test_download_resource(self):
+    downloader = ResourceDownloader(
+        "http://piedpiper.com/compression")
+    payload = await downloader.download()
+    self.assertEqual(payload, b"MiddleOut")
+</code></pre>
+		<footer>
+			<p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2><code>@patch</code> decorating a coroutine</h2>
+		By default, the patch is active as long as the coroutine is not finished:
+		<pre><code class="python">async def test_download_resource(self):
+	<mark> with patch("asyncio.open_connection", side_effect=create_mocks):</mark>
+        downloader = ResourceDownloader(
+            "http://piedpiper.com/compression")
+        payload = await downloader.download()
+        self.assertEqual(payload, b"MiddleOut")
+        </code></pre>
+		<p class="next">But what if a concurrent task must not be affected by the patch?</p>
+		<footer>
+			<p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide blue"><div>
+		<h2><code>@patch</code> decorating a coroutine</h2>
+		<pre><code class="python">@patch("asyncio.open_connection",
+	side_effect=create_mocks, <mark>scope=asynctest.LIMITED</mark>)
+async def test_download_resource(self):
+        downloader = ResourceDownloader(
+            "http://piedpiper.com/compression")
+        payload = await downloader.download()
+        self.assertEqual(payload, b"MiddleOut")
+        </code></pre>
+		<p class="next">The patch is disabled when the coroutine (task) yields to the scheduler.</p>
+		<footer>
+			<p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide shout pink"><div>
+	<h2>Selector mocking</h2>
+	</div></section>
+
+	<section class="slide pink"><div>
+	    <h2>Mocking interactions with the selector</h2>
+	    <pre><code class="python">import asyncio, asynctest
+
+class Test_LowLevel(asynctest.TestCase):
+    async def test_using_selector(self):
+        mock_socket = <mark>asynctest.selector.SocketMock()</mark>
+        event = asyncio.Event()
+        <mark class="next">self.loop.add_reader(mock_socket, event.set)</mark>
+        <mark class="next">asynctest.selector.set_read_ready(mock_socket, self.loop)</mark>
+        try:
+            await asyncio.wait_for(event.wait(), timeout=1)
+        finally:
+            self.loop.remove_reader(mock_socket)
+        </pre></code>
+		<footer>
+		    <p></p>
+		</footer>
+	</div></section>
+
+	<section class="slide pink"><div>
+	    <h2><code>TestSelector</code></h2>
+        <ul>
+            <li>Wraps the selector of your platform</li>
+            <li class="next">Enabled by default with <code>TestCase</code> (but not with proactor)</li>
+            <li class="next">Works with mocks and actual file descriptors</li>
+            <li class="next"><code>FileMock()</code>, <code>SSLSocketMock()</code>, ...</li>
+        </ul>
+		<footer>
+		    <p></p>
+		</footer>
+	</div></section>
+
+    <section class="slide pink"><div>
+		<h2>How about selector callbacks?</h2>
+		<pre><code class="python"><mark>@asynctest.fail_on(active_selector_callbacks=True)</mark>
+def test_using_selector(self):
+    mock_socket = asynctest.selector.SocketMock()
+    event = asyncio.Event()
+    self.loop.add_reader(mock_socket, event.set)
+    asynctest.selector.set_read_ready(mock_socket, self.loop)
+    try:
+        await asyncio.wait_for(event.wait(), timeout=1)
+    finally:
+        self.loop.remove_reader(mock_socket)
+		</code></pre>
+		<footer>
+			<p>This check is useful if ever you need to test a libary which
+			works with the lower level features of <code>asyncio</code>, for
+			instance, if you're porting existing code.</p>
+		</footer>
+	</div></section>
+
+
+
+	<section class="slide intro"><div>
+		<h2>More about <code>asynctest</code></h2>
+		<ul>
+		    <li>Future:
+		    <ul>
+		        <li>support of asynchronous iterators and context managers,
+		        <li class="next">mocking of IO (sockets, files, pipes, ...),</li>
+                <li class="next">support of Windows' proactor (maybe?).</li>
+            </ul></li>
+            <li class="next"><code>pytest-asyncio</code>: less features, but you
+                can use asynctest with it</li>
+            <li class="next">Users: alwaysdata, folks at Mozilla and Cisco,
+                you?</li>
+		</ul>
+	</div></section>
+
+	<section class="slide intro"><div>
+		<h2>Your turn!</h2>
+		<ul>
+		    <li>Write how to run tests in your <code>README</code> or <code>CONTRIBUTING</code> file</li>
+            <li class="next">Make sure tests are easy to run:<br>
+                <code>$ git clone</code><br>
+                <code>$ python -m unittest</code> (or <code>nose</code>,
+                <code>pytest</code>, <code>tox</code>, ...)</li>
+            <li class="next">You can now enable travis-ci!</li>
+		</ul>
+	</div></section>
+
+	<section class="slide intro"><div>
+		<h2>Thanks</h2>
+		<ul>
+	        <li><a href="https://asynctest.readthedocs.org">asynctest.readthedocs.org</a> and <a href="https://github.com/Martiusweb/asynctest">github.com/Martiusweb/asynctest</a></li>
+		    <li>I'm Martin, come talk to me!</li>
+            <li><code>martius@martiusweb.net</code></li>
+	        <li><code>https://marti.us</code></li>
+	        <li>Twitter, github, etc&nbsp;: <code>Martiusweb</code></li>
+	        <li>slides are at: <a
+	      href="https://marti.us/t/pyconfr-2016/">https://marti.us/t/pyconfr-2016/</a></li>
+	        <li>Full example: <a
+	      href="https://marti.us/t/pyconfr-2016/asynctest_example.py">https://marti.us/t/pyconfr-2016/asynctest_example.py</a></li>
+		</ul>
+		<footer>
+			<p>Typewriter etsy messenger bag fingerstache.</p>
+		</footer>
+	</div></section>
+	<!-- p class="badge"><a href="https://github.com/shower/shower">Fork me on
+	 Github</a></p -->
+	<!--
+		To hide progress bar from entire presentation
+		just remove “progress” element.
+		-->
+	<div class="progress"><div></div></div>
+	<script src="../theme/shower.min.js"></script>
+</body>
+</html>
