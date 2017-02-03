@@ -129,7 +129,7 @@ class Test_MyFeature(asynctest.TestCase):
 		    <code>asyncio.get_event_loop()</code>, which allows you to take
 		    control of the loop used for the tests.</p>
 		    <p>Most of the time, you'll only need to set your custom policy in
-		    setUpClass() though.</p>
+		    <code>setUpClass()</code> though.</p>
 		</footer>
 	</div></section>
 
@@ -182,9 +182,9 @@ class Test_PeriodicRefresh(asynctest.TestCase):
 		<footer>
 			<p><code>ClockedTestCase</code> will replace the loop clock by
 			a clock we control. It will never advance by itself, but we can
-			make it move forward in a blink.</p>
+			make it move forward in a blink with <code>self.advance()</code>.</p>
 			<p>It sounds obvious, but advance simulates the time passing,
-			rather that making the clock just right to the given time, meaning
+			rather that making the clock jump right to the given time, meaning
 			that scheduled callbacks are not late and work as expected.</p>
 		</footer>
 	</div></section>
@@ -205,7 +205,7 @@ class Test_MyFeature(asynctest.TestCase):
         # this test will not fail
         </code></pre>
 		<footer>
-			<p><code>You can ask <code>TestCase</code> to check that scheduled
+			<p>You can ask <code>TestCase</code> to check that scheduled
 			callbacks are executed before the end of the test.</p>
 			<p>If a callback is cancelled, the test runs fine.</p>
 		</footer>
@@ -236,7 +236,10 @@ class Test_MyFeature(asynctest.TestCase):
 
     return self.data</code></pre>
 		<footer>
-		    <p></p>
+		    <p>Let's discover <code>asynctest</code>'s mocking features using
+		    an example.</p>
+		    <p>This method connects to a HTTP server to download a resource and
+		    stores it in <code>self.data</code>.</p>
 		</footer>
 	</div></section>
 
@@ -252,7 +255,13 @@ class Test_MyFeature(asynctest.TestCase):
     return reader, writer
 </code></pre>
 		<footer>
-			<p></p>
+			<p>We will mock the server by returning mock stream objects rather
+			than connecting to the server.</p>
+			<p>As we see, we specified the <code>StreamReader</code> as the
+			spec of our mock, and we will make it return expected data.</p>
+			<p>I agree, this is less than optimal as it's tied to the
+			implementation of <code>download()</code>, but it's a simplified
+			example.</p>
 		</footer>
     </div></section>
 	<section class="slide blue"><div>
@@ -265,7 +274,11 @@ class Test_MyFeature(asynctest.TestCase):
 		    <li class="next">⚠ doesn't detect function returning futures</li>
 		</ul>
 		<footer>
-			<p></p>
+			<p>As we just see, we didn't care about <code>readuntil</code> and
+			co being coroutines.</p>
+			<p>This is because coroutine functions are detected and mocked by
+			<code>CoroutineMock</code>, which behaves like a coroutine and is
+			awaitable (without yielding to the scheduler, though).</p>
 		</footer>
 	</div></section>
 
@@ -279,7 +292,11 @@ async def test_download_resource(self):
     self.assertEqual(payload, b"MiddleOut")
 </code></pre>
 		<footer>
-			<p></p>
+			<p>Let's use our new mock objects in a test: thanks to
+			<code>patch</code>, <code>asyncio.open_connection()</code> will be
+			mocked as a coroutine, and return the mock streams.</p>
+			<p>It detected that <code>open_connection()</code> is a coroutine
+			and worked as a decorator on a coroutine.</p>
 		</footer>
 	</div></section>
 
@@ -295,7 +312,12 @@ async def test_download_resource(self):
         </code></pre>
 		<p class="next">But what if a concurrent task must not be affected by the patch?</p>
 		<footer>
-			<p></p>
+			<p>Indeed, in this example, the patch will be activated until the
+			coroutine is done. This is equivalent to this context manager
+			equivalent (<code>with</code> statement enclosing the whole body of
+			the coroutine).</p>
+			<p>The patch is still enabled when <code>await</code> yiels to the
+			scheduler.</p>
 		</footer>
 	</div></section>
 
@@ -309,9 +331,17 @@ async def test_download_resource(self):
         payload = await downloader.download()
         self.assertEqual(payload, b"MiddleOut")
         </code></pre>
-		<p class="next">The patch is disabled when the coroutine (task) yields to the scheduler.</p>
+		<p class="next">The patch is disabled when the coroutine (task) yields
+		to the scheduler.</p>
 		<footer>
-			<p></p>
+			<p>But what if we don't want the patch to impact tasks running
+			concurrently?</p>
+			<p>In this case, we can specify
+			<code>scope=asynctest.LIMITED</code> to our patch. It disables the
+			patch when the coroutine yields to the scheduler (go down in the
+			stack) and re-enables it when the task is scheduled again.</p>
+			<p>The patch is still enabled in the called coroutine (go up in the
+			stack).</p>
 		</footer>
 	</div></section>
 
@@ -335,7 +365,15 @@ class Test_LowLevel(asynctest.TestCase):
             self.loop.remove_reader(mock_socket)
         </pre></code>
 		<footer>
-		    <p></p>
+		    <p>Let's see the last main area where <code>asynctest</code> can
+		    help you: mocking the selector, the low-level infrastructure of an
+		    IO loop.</p>
+		    <p>In this example (which actually doesn't test anything), we use
+		    a <code>SocketMock</code>, which avoid the need for a resource from
+		    the system.</p>
+		    <p>The only feature of <code>SocketMock</code> is its compatibility
+		    with <code>TestSelector</code>, and programatically trigger
+		    events.</code>
 		</footer>
 	</div></section>
 
@@ -343,12 +381,19 @@ class Test_LowLevel(asynctest.TestCase):
 	    <h2><code>TestSelector</code></h2>
         <ul>
             <li>Wraps the selector of your platform</li>
-            <li class="next">Enabled by default with <code>TestCase</code> (but not with proactor)</li>
             <li class="next">Works with mocks and actual file descriptors</li>
             <li class="next"><code>FileMock()</code>, <code>SSLSocketMock()</code>, ...</li>
+            <li class="next">Enabled by default with <code>TestCase</code> (but not with proactor)</li>
         </ul>
 		<footer>
-		    <p></p>
+		    <p><code>TestSelector</code> wraps the selector of your platform to
+		    catch and simulate events of the <code>IOMock</code>s. It's still
+		    compatible with real file descriptors and comes with mocks for the
+		    spec you need: socket, file, etc.</p>
+		    <p><code>TestSelector</code> is enabled by default if your loop is
+		    configurated with a selector backend. It means that you can use
+		    your <code>IOMock</code>s in your test for free. There is nothing
+		    for proactor yet though.</p>
 		</footer>
 	</div></section>
 
@@ -366,9 +411,10 @@ def test_using_selector(self):
         self.loop.remove_reader(mock_socket)
 		</code></pre>
 		<footer>
-			<p>This check is useful if ever you need to test a libary which
-			works with the lower level features of <code>asyncio</code>, for
-			instance, if you're porting existing code.</p>
+			<p>There is an optional check that you can enable to ensure that
+			a call to <code>add_{reader|writer}()</code> is always followed
+			by a <code>remove_{reader|writer}()</code> during the life of
+			your test (including <code>tearDown()</code> and clean-up).</p>
 		</footer>
 	</div></section>
 
