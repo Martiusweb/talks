@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Streaming vidéo dans le navigateur - Martin Richard</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=680, user-scalable=no">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<link rel="stylesheet" href="../theme/styles/screen.css">
+	<link rel="stylesheet" href="../theme/styles/custom.css">
+	<link rel="stylesheet" href="styles.css">
+</head>
+<body class="list">
+	<!--
+		Debug class on <body> enables
+		cyan grid on slides
+		-->
+	<header class="caption">
+		<h1>Streaming vidéo dans le navigateur</h1>
+		<p><a href="https://www.martiusweb.net/">Martin Richard</a>, Criteo</p>
+	</header>
+	<section class="slide shout intro"><div>
+		<h2>Streaming vidéo dans le navigateur</h2>
+		<aside>
+		    Martin Richard <small>UPMC - 19 Janvier 2018</small>
+		</aside>
+	</div></section>
+	<section class="slide agenda"><div>
+		<h2>Qui suis-je&nbsp;?</h2>
+		<ol>
+		    <li>Dev/Ops chez Criteo (département SRE)</li>
+		    <li>Avant: Ingénieur Système chez Alwaysdata</li>
+		</ol>
+	</div></section>
+	<section class="slide agenda"><div>
+		<img src="images/crto.png" alt="Criteo">
+		<ul>
+		    <li>Affichage de publicité en ligne</li>
+		    <li>2500 employés, 500 ingénieurs</li>
+		    <li>6 data centers dans le monde, 35 000 serveurs, ...</li>
+		    <li>On a une équipe réseau et on recrute :)</li>
+		</ul>
+	</div></section>
+	<section class="slide agenda"><div>
+		<h2>Dans cette présentation&nbsp;:</h2>
+		<p class="note">Comment diffuser de la vidéo dans un navigateur&nbsp;?</p>
+		<ol>
+		    <li>Le navigateur</li>
+		    <li>Streaming de contenu avec HTTP</li>
+		    <li>Streaming en temps réel avec WebRTC</li>
+		</ol>
+	</div></section>
+	<section class="slide shout"><div>
+		<h2>Le navigateur</h2>
+	</div></section>
+	<section class="slide blue"><div>
+	    <h2>Dans cette partie&nbsp;:</h2>
+		<ol>
+		    <li>Définition d'un navigateur</li>
+		    <li>Afficher de la vidéo</li>
+		    <li>Contraintes du système</li>
+		    <li>Contraintes du réseau</li>
+		</ol>
+	</div></section>
+	<section class="slide blue"><div>
+	    <h2>Définition d'un navigateur</h2>
+		<ul>
+		    <li>Parcourt le web: ensemble de documents multimédias, liés entre eux par des <em>hyperliens</em></li>
+		    <li>Une ressource est identifiée par une URL</li>
+		    <li>Le navigateur télécharge et exécute des applications</li>
+		    <li>Qui tournent sur une couche d'abstraction de la plateforme (OS)</li>
+		    <li>Dans un environnement sécurisé</li>
+		</ul>
+		<footer>
+			<p>Un navigateur est grosso-modo un <em>runtime</em> comme Java ou
+			Flash. Il permet de télécharger des applications, écrites dans des
+			langages de haut niveau, et les exécute sur une machine virtuelle
+			(couche logicielle qui fait le pont entre le haut niveau applicatif
+			et la plateforme sous-jacente (l'OS).</p>
+			<p>Une grosse contrainte pour le navigateur, c'est de garantir la
+			sécurité de ses utilisateurs&nbsp;: le code JS n'est pas fiable, et
+			de nombreux malwares tentent d'accéder à l'ordinateur à travers le
+			navigateur.</p>
+		</footer>
+	</div></section>
+	<section class="slide blue"><div>
+		<div style="text-align:center"><img src="images/network-overview.png" alt=""></div>
+		<footer>Le navigateur implémente ces deux stacks réseau : HTTP et
+		    WebRTC, en plus de quelques autres, comme DNS, etc. TCP et UDP sont
+		    gérés par le système d'exploitation.</p>
+	</div></section>
+	<section class="slide blue"><div>
+		<h2>Afficher de la vidéo dans le navigateur</h2>
+		<ul>
+		    <li>Avant, les plugins comme Flash (propriétaire)</li>
+		    <li>Aujourd'hui: <code>&lt;video&gt;</code></li>
+		    <li>Dans les tuyaux: APIs en Javascript (Web Audio, HTMLMediaElement), EME (DRM)</li>
+		<footer>
+			<p>Avant, il fallait un plugin pour afficher de la vidéo, flash
+			était (et est quand même toujours en partie) la solution standard
+			<em>de facto</em>. C'est en train de se faire remplacer par
+			<code>&lt;video&gt;</code>, standardisé en HTML5, et associé à des
+			APIs Javascript riches et des codecs standardisés et libres. Flash
+			n'est plus utile.</p>
+		</footer>
+	</div></section>
+	<section class="slide blue"><div>
+		<h2>Afficher de la vidéo dans le navigateur</h2>
+		<pre>
+            <code>&lt;video loop controls src="public/horseplay-2.webm"&gt;&lt;/video&gt;</code>
+            <code>&lt;video controls&gt;</code>
+            <code>  &lt;source src="public/horseplay-2.webm"&gt;</code>
+            <code>  &lt;source src="public/horseplay-2.mp4"&gt;</code>
+            <code>&lt;/video&gt;</code>
+		</pre>
+		<footer>
+			<p>En quelques lignes de code, ça donne ça.</p>
+		</footer>
+	</div></section>
+	<section class="slide blue"><div>
+        <video loop controls src="images/horseplay-2.webm"
+        style="max-width: 100%; margin: 0 auto;">
+        </video>
+		<footer>
+			<p>En quelques lignes de code, ça donne ça.</p>
+		</footer>
+	</div></section>
+	<section class="slide blue"><div>
+		<h2>Contraintes du système</h2>
+		<ul>
+		    <li>Performances (CPU, GPU)</li>
+		    <li>Codecs disponibles</li>
+		    <li>Compatibilité hardware (acquisition, affichage)</li>
+		    <li>Batterie</li>
+		    <li>C'est la jungle&nbsp;!</li>
+		</ul>
+		<footer>
+		    <p>Quand on veut afficher de la vidéo, il faut tenir compte de
+		    nombreuses contraintes&nbsp;: on a beaucoup de matériel différent,
+		    et  certains ne sont pas capables d'afficher de nombreux flux
+		    vidéos en HD. surtout si la vidéo est traitée en local (effets,
+		    redimensionnement avec re-échantillonage, etc).</p>
+		    <p>Il faut aussi tenir compte des contraintes imposées par le
+		    mobile&nbsp;: en particulier une baterie faible. Afficher de la
+		    vidéo est un vrai casse-tête, même encore aujourd'hui...</p>
+		</footer>
+	</div></section>
+	<section class="slide blue"><div>
+		<h2>Contraintes du réseau</h2>
+		<ul>
+		    <li>Bande passante</li>
+		    <li>Latence</li>
+		    <li>Perte de paquets (fiabilité)</li>
+		    <li>QoS, Firewalls, IPv4, NAT</li>
+		    <li>C'est le Far-West&nbsp;!</li>
+		</ul>
+		<footer>
+		    <p>Le réseau aussi apporte de nombreuses contraintes&nbsp;: la
+		    bande passante peut limiter le nombre de flux qui transitent, ou
+		    leur qualité (en particulier en <em>upload</em>).</p>
+		    <p>Un problème souvent ignoré, c'est la latence&nbsp;: on passe
+		    beaucoup de temps à faire des aller-retours pour initialiser la
+		    connexion, négocier des paramètres, etc.</p>
+		    <p>Pire, des noeuds intermédiaires peuvent être saturés et perdre
+		    des paquets, ou mettre en place des stratégies pour rendre le
+		    réseau "moins neutre", avec de la QoS ou des Firewalls pour filtrer
+		    le trafic.</p>
+		    <p>Tenir compte de toutes les contraintes est complexe, et sur
+		    internet, les gens qui font n'importe quoi sont nombreux... même
+		    les gros FAI (par exemple SFR qui mettait des DNS menteurs).</p>
+		</footer>
+	</div></section>
+	<section class="slide blue"><div>
+		<div style="text-align:center"><img src="images/network-topo.png" alt=""></div>
+	</div></section>
+
+	<section class="slide shout pink"><div>
+		<h2>Streaming de contenu avec HTTP</h2>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>Dans cette partie&nbsp;:</h2>
+		<ol>
+		    <li>TCP</li>
+		    <li>HTTP/1.1</li>
+		    <li>HTTP/2</li>
+		    <li>TLS, QUIC, et le futur</li>
+		</ol>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>TCP</h2>
+		<ul>
+			<li>Protocole de streams full-duplex</li>
+			<li>Contrôle de congestion (<code>cwnd</code>,
+			    <code>rwnd</code>)</li>
+			<li>Ordre des données garanti</li>
+			<li>Arrivée garantie</li>
+			<li class="andso"><em>Head-of-Line blocking</em></li>
+		</ul>
+		<footer>
+		    <p>TCP est un protocole qui offre une abstraction logicielle à base
+		    de flux bi-directionnels (deux tuyaux dans lesquels coulent des
+		    flots d'octets).</p>
+		    <p>Il offre des garanties de fiabilité sur un réseau qui n'en offre
+		    pas, et déploie un mécanisme de contrôle de congestion pour éviter
+		    de saturer un lien.</p>
+		    <p>Cependant, avoir un ordre d'arrivée garanti, fait que si un
+		    paquet est perdu, tous les suivants vont devoir attendre que le
+		    premier soit finalement reçu, ça créée un blocage sur le premier
+		    élément de la file.</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>HTTP/1.1&nbsp;: une requête</h2>
+		<pre>
+		    <code>GET /resource HTTP/1.1</code>
+		    <code>Host: www.martiusweb.net</code>
+		    <code>Connection: Keep-Alive</code>
+		</pre>
+		<footer>
+		    <p>Voilà un exemple de requête HTTP, c'est suffisant pour dialoguer
+		    sur le web.</p>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>HTTP/1.1&nbsp;: une réponse</h2>
+		<pre>
+		    <code>HTTP/1.1 200 OK</code>
+		    <code>Connection: Keep-Alive</code>
+		    <code>Date: Tue, 27 Oct 2015 15:02:49 GMT</code>
+            <code>Content-Type: text/html</code>
+            <code>Content-Length: 22796</code>
+		</pre>
+		<footer>
+		    <p>Et la réponse correspondante.</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+	    <h2>Avantages</h2>
+	    <ul>
+	        <li>Simple et facile à utiliser</li>
+	        <li>Ports 80 et 443, toujours ouverts</li>
+	        <li>Extensible et versatile&nbsp;:
+	            <ul>
+	                <li>Cache et requêtes conditionnelles</li>
+	                <li><code>Range-Request</code></li>
+	                <li><code>Encoding: Chunked</code></li>
+	            </ul>
+	        </li>
+	    </ul>
+	    <footer>
+	        <p>En pratique, c'est très simple à utiliser, ça explique en partie
+	        sa popularité.</p>
+	        <p>Aujourd'hui, le web n'est <em>jamais</em> bloqué sur un réseau,
+	        donc les ports 80 et 443 de TCP sont toujours ouverts. Ça incite
+	        les gens à les utiliser pour tout et n'importe quoi, en limitant le
+	        risque de ne pas pouvoir franchir des Firewalls..</p>
+	        <p>En plus, le protocole est suffisament simple pour être étendu,
+	        et permet de développer de nouveaux usages.</p>
+	    </footer>
+	</div></section>
+	<section class="slide pink"><div>
+	    <h2>Inconvénients</h2>
+	    <ul>
+	        <li>Mauvaises implémentations de HTTP partout</li>
+	        <li>Limité par TCP (<em>Head of Line</em>, <em>slow-start</em>,
+	            <em>handshake</em>)</li>
+	        <li>Synchronicité des messages (personne n'implémente le pipelining correctement)</li>
+	        <li>Le chargement de la page retarde le chargement de la vidéo</li>
+	        <li><em>Bloated</em>: on envoie des tonnes de données inutiles</li>
+	        <li>Utilisation inutile de gzip dans certains cas, etc</li>
+	    </ul>
+	    <footer>
+	        <p>Par contre, HTTP est souvent mal implémenté, ou en partie
+	        seulement, car c'est un protocole devenu très volumineux. Les
+	        contraintes imposées par TCP limitent aussi ses performances&nbsp;:
+	        on doit ouvrir plusieurs connexions TCP pour afficher une page web,
+	        pour pouvoir paralléliser le téléchargement de resources.</p>
+	        <p>À cause du problème de Head of Line, un objet comme une vidéo
+	        sera souvent chargée après d'autres resources que le navigateur
+	        juge prioritaires (fichiers Javascript ou CSS par exemple).</p>
+	        <p>Un autre défaut de HTTP est qu'il sur-consomme de la bande passante, les en-têtes sont nombreux, et au format texte...</p>
+	        <p>Pour la vidéo, on a souvent des serveurs configurer pour
+	        compresser les fichiers à la volée. C'est inutile pour de la vidéo,
+	        et consomme du CPU inutilement.</p>
+	    </footer>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2><code>Range-Request</code>&nbsp;: oui, tu peux&nbsp;!</h2>
+		<pre>
+		    <code>HTTP/1.1 200 OK</code>
+		    <code><strong>Accept-Ranges: bytes</strong></code>
+		    <code>...</code>
+		</pre>
+		<footer>
+		    <p>Revenons sur un méchanisme de HTTP/1.1 intéressant pour diffuser
+		    de la vidéo : les <code>Range-Request</code>s.</p>
+		    <p>Un serveur nous prévient quand il supporte ce mechanisme avec
+		    l'entête <code>Accept-Ranges</code>.</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2><code>Range-Request</code>&nbsp;: requête</h2>
+		<pre>
+		    <code>GET /video.webm HTTP/1.1</code>
+		    <code><strong>Range: bytes=0-4096</strong></code>
+		    <code>...</code>
+		</pre>
+		<footer>
+		    <p>Il permet de demander à ne télécharger qu'un morceau de fichier.
+		    C'est très pratique pour la vidéo : on ne télécharge que l'index de
+		    la vidéo, et les premières secondes.</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2><code>Range-Request</code>&nbsp;: réponse</h2>
+		<pre>
+		    <code>HTTP/1.1 <strong>206 Partial Content</strong></code>
+		    <code><strong>Content-Length: 4096</strong></code>
+		    <code><strong>Content-Range: bytes 0-4096/381467554</strong></code>
+		    <code>...</code>
+		</pre>
+		<footer>
+		    <p>Le serveur répond donc avec une partie du fichier, et on peut demander les morceaux suivants progressivment.</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2><code>Range-Request</code></h2>
+		<ul>
+		    <li>Téléchargement de fragments de fichiers</li>
+		    <li>Multi-homing (téléchargement depuis plusieurs sources)</li>
+		    <li>Permet des bidouillages pour faire de l'adaptive bitrate</li>
+		    <li>... avant/avec MSE (API haut niveau qui permet de pousser des chunks dans un renderer <code>&lt;video&gt;</code>)&nbsp;?</li>
+		</ul>
+		<footer>
+		    <p>En poussant le vice, on peut faire des optimisations marantes, comme le multi-homing, c'est à dire télécharger les fragments en parallèle depuis plusieurs serveurs, pour gagner en latence et parallélisation.</p>
+		    <p>Pour servir un gros fichier, ça peut valoir le coup, par exmeple
+		    en cas de plantage d'un serveur en cours de diffusion.</p>
+		    <p>On peut même faire des choses encore plus marantes : on demande
+		    des morceaux de la vidéo progressivment, en envoyant manuellement
+		    des informations sur la qualité de la connexion. Le serveur peut
+		    alors choisir de diminuer <em>à la volée</em> la qualité du flux
+		    vidéo (temporairement) pour que la lecture ne soit pas interrompue
+		    parce que le débit vient à manquer.</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>HTTP/2: Résoudre les problèmes</h2>
+		<ul>
+			<li>Multiplexage sur un seul stream TCP</li>
+			<li>Priorisation des flux (mais bon)</li>
+			<li>Built-in compression</li>
+			<li>Stateful: pas besoin de renvoyer des infos redondantes à chaque requête</li>
+			<li>Compatible HTTP/1.1, donc <code>Range-Request</code>s</li>
+			<li>Un peu un gros hack par les ports 80/443...</li>
+		</ul>
+		<footer>
+		    <p>HTTP/2 doit résoudre les problèmes de HTTP/1 en conservant la
+		    sémantique de HTTP/1 mais en se présentant au format binaire, et en
+		    ajoutant une couche qui permet de multiplexer les flux sur une
+		    seule connexion TCP. Ça permet de n'avoir à subir le slow-start et
+		    la négociation TLS une seule fois seulement. Et de laisser le
+		    navigateur choisir quelle donnée est plus prioritaire
+		    dynamiquement. Bon par contre, ça risque de ne pas être implémenté
+		    par tout le monde tout de suite (la priorité des flux).</p>
+		    <p>On réduit aussi le volume de transferts inutiles, en compressant
+		    les en-têtes et en gardant un historique de certains entêtes
+		    attachés à la connexion (par exemple le Keep-Alive).</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>Pour la vidéo&nbsp;?</h2>
+		<ul>
+		    <li>Meilleure réactivité globale</li>
+		    <li>Au niveau des chunks de vidéo&nbsp;:</li>
+		    <li>Réduction de la latence (un seul socket TCP = pas de
+		        <em>slow-start</em>, etc)</li>
+		    <li>Priorisation des chunks à afficher rapidement</li>
+		</ul>
+		<footer>
+		    <p>Pour streamer de la vidéo, ça permet une meilleure expérience
+		    utilisateur grace à une meilleure réactivité globale d'une
+		    application web.</p>
+		    <p>On peut aussi afficher la vidéo plus vite en réduisant la
+		    latence pour l'afficher, et en faisant varier la priorité des
+		    chunks à afficher (on peut même en abandonner quelques uns si il est trop tard pour les afficher)</p>
+		    <p>On gagne aussi énormément sur le mobile, puisque la latence peut être un vrai poison.</p>
+		</footer>
+	</div></section>
+	<section class="slide pink"><div>
+		<h2>TLS, QUIC, ?</h2>
+		<ul>
+		    <li>TLS: chiffrage de bout en bout</li>
+		    <li>coût élevé en CPU</li>
+		    <li>obscur pour le coeur de réseau</li>
+		    <li>QUIC: pour remplacer TCP?</li>
+		</ul>
+		<footer>
+		    <p>TLS et une couche qui chiffre le trafic au desus de TCP.</p>
+		    <p>Pour garantir le chiffrage, chaque échange est unique (entre
+		    deux pairs et dans le temps).</p>
+		    <p>C'est coûteux en CPU, mais ça garantit que les intermédiaires
+		    dand le réseau traiteront le trafic de façon neutre.</p>
+		    <p>QUIC est un projet de Google qui vise à implémenter un protocole
+		    aux mêmes propriétés que TCP mais avec moins de limitations.</p>
+		    <p>Pour pouvoir le déployer sans changer le matériel réseau
+		    existant, le protocole est implémenté au dessus de UDP.</p>
+		</footer>
+	</div></section>
+	<section class="slide shout green"><div>
+		<h2>Streaming en temps réel avec WebRTC</h2>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>Dans cette partie&nbsp;:</h2>
+		<ol>
+		    <li>Objectifs de WebRTC</li>
+		    <li>MediaStream</li>
+		    <li>Signaling</li>
+		    <li>RTCPeerConnection: ICE, STUN, TURN, Nat traversal</li>
+		    <li>RTCDataChannel: SCTP over UDP</li>
+		</ol>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>Objectifs de WebRTC</h2>
+		<ul>
+		    <li>Adresser le problème du temps réel (<em>timeliness</em> plutôt
+		    que <em>reliability</em>)</li>
+		    <li>Fournir une API en Javascript permettant d'acquérir et
+		        manipuler du contenu multimédia</li>
+		    <li>Fournir un ensemble de protocoles standards et
+		        inter-opérables</li>
+		</ul>
+		<footer>
+		    <p>WebRTC permet de streamer en temps réel, c'est à dire du contenu vidéo diffusé en même temps qu'il est produit. On veut donc afficher le résultat le plus vite possible, même si on perd des bouts.</p>
+		    <p>WebRTC est une API Javascript et un ensemble de protocoles qui
+		    simplifie et standardise tout ça.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>WebRTC, un gros framework</h2>
+		<div style="text-align:center"><img src="images/webrtc.png" alt=""></div>
+		<footer>
+		    <p>C'est un ensemble de composants implémentés dans le navigateur, pour que l'utilisateur n'ait pas à refaire tout ça.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>MediaStream</h2>
+		<div style="text-align:center"><img src="images/webrtc-MediaStream.png" alt=""></div>
+		<footer>
+		    <p>MediaStream est la partie de WebRTC qui sert à obtenir de
+		    l'audio et de la vidéo. En quelques lignes de javascript, on
+		    obtient un flux qui répond à nos exigences manipulable programatiquement et synchronisé entre plusieurs sources (audio et vidéo).</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>MediaStream</h2>
+        <pre><code>navigator.getUserMedia(constraints, onStream, onError);</code>
+        <code>function onStream(stream) {</code>
+        <code>  var video = document.querySelector('video');</code>
+        <code>  video.src = window.URL.createObjectURL(stream);</code>
+        <code>}</code></pre>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>RTCPeerConnection</h2>
+		<ul>
+		    <li>API Javascript</li>
+		    <li>Canal de communication <em>full-duplex</em> avec un pair</li>
+		    <li>Utilise les protocoles SRTP et SRTCP (<em>over UDP</em>)</li>
+		    <li>Chiffré avec DTLS (<em>Datagram TLS</em>)</li>
+		    <li>Le navigateur s'occupe de l'<em>adaptive bitrate</em></li>
+		</ul>
+		<footer>
+		    <p>C'est une API Javascript qui permet de dialoguer en p2p avec un
+		    autre client. En quelques lignes, on peut ouvrir un canal de
+		    communication avec un pair, pour échanger un MediaStream.</p>
+		    <p>Ce canal se base sur SRTP et SRTCP qui sont des protocoles
+		    encapsulés dans UDP, mais qui ajoutent des méta données permettant
+		    la synchronisation des flux (date/heure du chunck, bitrate,
+		    etc).</p>
+		    <p>Le flux média est chiffré avec DTLs, qui est TLS mais adapté au
+		    fait qu'on n'a pas la garantie d'obtenir tous les paquets dans
+		    l'ordre (ça interdit d'utiliser des algos de chiffrements qui se
+		    basent sur les données précédentes).</p>
+		    <p>La bonne nouvelle, ce que ce protocole et l'API de haut niveau
+		    abstrait la complexité de l'adaptive bitrate pour nous.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>RTCDataChannel</h2>
+		<ul>
+		    <li>API Javascript</li>
+		    <li>Canal de communication pour des données arbitraires</li>
+		    <li>Orienté message</li>
+		    <li>Garanties optionnelles&nbsp;:
+		        <ul>
+		            <li>ordonné ou non</li>
+		            <LI>délivraison garantie ou non</li>
+		        </ul>
+		    </li>
+		</ul>
+		<footer>
+		    <p>À coté, on a un canal de communication qui permet d'envoyer
+		    n'importe quel type de données. Un peu comme UDP car on envoie des
+		    messages, pas un flux de données, mais avec des garanties comme TCP
+		    (qui sont ici optionnelles). C'est super pratique, pour du jeu
+		    vidéo par exemple : on peut choisir si une donnée doit absolument
+		    arriver si l'ordre est important ou pas trop, etc.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>SCTP</h2>
+		<ul>
+		    <li><code>RTCDataChannel</code> utilise SCTP</li>
+		    <li>Normalement au niveau de TCP ou UDP</li>
+		    <li>Mais encapsulé dans le l'UDP pour traverser les NAT</li>
+		</ul>
+		<footer>
+		    <p>Le protocole sous-jacent est SCTP. Normalement, il s'utilise au
+		    même niveau que TCP ou UDP (donc niveau 5 OSI), mais les NAT ne
+		    savent pas gérer SCTP, donc il faut l'encaspuler dans UDP :(</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>Etablir une connexion: le problème des NAT</h2>
+		<ul>
+		    <li>Distribue dans un réseau local du trafic depuis Internet</li>
+		    <li>Les pairs ne connaissent pas leur IP publique</li>
+		    <li>Les NAT ne savent pas comment router les paquets</li>
+		    <li>Ils utilisent une table de correspondance privé/public</li>
+		</ul>
+		<footer>
+		    <p>Parlons un peu plus du problème des NAT. Comme on le disait tout à l'heure, ça sert à router du contenu entre un réseau privé et internet. Pour pouvoir utiliser un tas d'IPv4 plein de fois dans plusieurs réseaux invisibles les uns des autres.</p>
+		    <p>Le souci, c'est que connecté derrière un routeur NAT, on connait
+		    notre IP locale, mais pas notre IP publique. Pas pratique pour être
+		    contacté par un pair...</p>
+		    <p>Un autre souci, c'est que par défaut, un NAT ne sait pas à qui adresser un paquet qui arrive, à moins que la connection ait été initiée au préalable de l'intérieur.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>NAT</h2>
+		<div style="text-align:center"><img src="images/udp-nat.png" alt=""></div>
+		<footer>
+		    <p>En gros&nbsp;: le NAT voit qu'on initie une connexion TCP vers un serveur public, on a envoyé le handshake avec un port source. Le NAT ajoute l'ip/port source dans une table de correspondance, et re-écrit le paquet TCP avec l'IP publique et un port de son choix. Il fera la même chose quand un paqet à destination de ce port en particulier arrivera.</p>
+		    <p>Pour UDP, il n'y a pas d'initialisation de session, donc on peut
+		    pas faire si simple : il n'y a pas de handshake de fin, donc le NAT doit mettre une date d'expiration de son choix sur une ligne de correspondance.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>STUN</h2>
+		<ul>
+		    <li><em>Session Traversal Utility for NAT</em></li>
+		    <li>Indique à un client son IP publique</li>
+		    <li>Force le NAT à maintenir la correspondace avec des
+		        heartbeats</li>
+		</ul>
+		<footer>
+		    <p>STUN répond à deux problèmes : il permet à un client de demander
+		    à un serveur public sont adresse IP vue de l'extérieur (donc IP
+		    publique), et de montrer au NAT qu'il s'attend à obtenir des
+		    réponses en UDP sur un port donné. Un peu comme le handshake
+		    TCP.</p>
+		    <p>Le serveur STUN enverra régulièrement des paquets "à ignorer"
+		    pour s'assurer que la date d'expiration de la correspondance NAT
+		    soit toujours retardée.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>STUN</h2>
+		<div style="text-align:center"><img src="images/udp-stun.png" alt=""></div>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>TURN</h2>
+		<ul>
+		    <li><em>Traversal Using Relay around NAT</em></li>
+		    <li>Quand le NAT est défectueux, ou la topologie de réseau complexe</li>
+		    <li>Ou le trafic UDP est bloqué</li>
+		    <li>Passage par un relai public</li>
+		    <li>Coûteux, car plus <em>peer-to-peer</em></li>
+		</ul>
+		<footer>
+		    <p>Pourtant, dans certains cas, ça ne suffit quand même pas&nbsp;:
+		    l'IP renvoyée par le serveur STUN peut être innacessible pour le
+		    pair dans un réseau différent, un firewall bloque complétement le
+		    trafic UDP...</p>
+		    <p>Dans ce cas, il faut passer par un serveur relai public qui va
+		    encaspuler le trafic UDP dans du TCP (oui...).</p>
+		    <p>Tout le trafic transite par ce relai public, ce qui a un impact
+		    côté performances, et peut coûter très cher en bande passante.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>TURN</h2>
+		<div style="text-align:center"><img src="images/udp-turn.png" alt=""></div>
+	</div></section>
+	<section class="slide green"><div>
+		<h2>ICE</h2>
+		<ul>
+		    <li><em>Interactive Connectivity Establishment</em></li>
+		    <li>Négociation du mode de communication&nbsp;:
+		        <ul>
+		            <li>Obtention de l'IP publique</li>
+		            <li>Tests de connectivité</li>
+		            <li>Paquets <em>Heartbeat</em> (<em>Keep Alive</em>)</li>
+		            <li>Public &gt; STUN &gt; TURN</li>
+		        </ul>
+		    </li>
+		</ul>
+		<footer>
+		    <p>ICE est un protocole qui se charge de négocier la meilleure
+		    manière dont les pairs vont communiquer. En particuler, un mode de
+		    ICE peut permettre de tester la connectivité et d'adapter le mode
+		    de transport en fonction des besoins (passer temporairement par un
+		    serveur TURN, etc).</p>
+		    <p>Les nouveaux cannaux découverts par ICE doivent être transmis au pair via un canal tiers, généralement celui de <em>signaling</em>.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		    <h2>Comment deux pairs se trouvent&nbsp;? Le <em>signaling</em></h2>
+		<ul>
+		    <li>Le <em>signaling</em> ne fait pas partie de WebRTC</li>
+		    <li>Canal utilisé pour mettre en relation les pairs</li>
+		    <li>Négociation d'une offre rédigée en SDP</li>
+		</ul>
+		<footer>
+		    <p>Pour finir, je vais quand même parler d'un élément qui ne fait
+		    pas partie de WebRTC&nbsp;: comment les pairs se
+		    découvrent-ils&nbsp;? C'est à votre application de gérer ça. On
+		    peut utiliser une application web qui transmet les messages avec
+		    des Websockets, ou encore plus artisanal, ou choisir d'utiliser un
+		    protocole de téléphone plus traditionel, comme SIP.</p>
+		    <p>L'idée c'est que ce canal (à la discression de l'application
+		    donc) permet d'échanger une offre de mise en relation, décrite avec
+		    un format appelé SDP (Session Description Protocol).</p>
+		    <p>C'est la partie qui implique généralement un serveur central,
+		    comme par exemple le service de Skype qui gère l'annuaire, la
+		    "connexion" et l'authentification au service.</p>
+		</footer>
+	</div></section>
+	<section class="slide green"><div>
+		<h2><em>Signaling</em></h2>
+		<div style="text-align:center"><img src="images/signaling.png" alt=""></div>
+	</div></section>
+
+	<section class="slide intro"><div>
+		<h2>Bibliographie</h2>
+		<ul>
+            <li>Les RFCs:
+                <ul>
+                    <li>HTTP/1.1&nbsp;: <strike>2616</strike>, 7230-7235, HTTP/2&nbsp;: 7540</li>
+                    <li>WebRTC&nbsp;: 7478</li>
+                    <li>ICE&nbsp;: 5245, STUN&nbsp;: 5389,
+                        TURN&nbsp;: 5766, SDP&nbsp;: 4566,
+                        DTLS&nbsp;: 6347, SCTP&nbsp;: 4960, SRTP&nbsp;: 3711</li>
+                    <li>WebRTC API côté W3C&nbsp;: <a href="http://www.w3.org/TR/webrtc/">www.w3.org/TR/webrtc/</a></li>
+                </ul>
+            </li>
+        </ul>
+	</div></section>
+	<section class="slide intro"><div>
+		<h2>Bibliographie</h2>
+        <p><img src="images/hpbncover.jpg" alt="" style="margin: 10px; float: left">
+        <em>High Performance Browser Networking</em><br>
+        Ilya Grigorik, O'Reilly Media, 2013</p>
+        <p class="note">C'est aussi le crédit images</p>
+	</div></section>
+	<section class="slide intro"><div>
+		<h2>Des questions ?</h2>
+		<ul>
+            <li><code>m.richard@criteo.com</code></li>
+            <li><code>martius@martiusweb.net</code></li>
+	        <li><code>https://marti.us</code></li>
+	        <li>Twitter, github, etc: <code>Martiusweb</code></li>
+	        <li>Lien vers cette présentation: <a
+	      href="https://marti.us/t/upmc-network-18/">https://marti.us/t/upmc-network-18/</a></li>
+		</ul>
+	</div></section>
+	<!--
+		To hide progress bar from entire presentation
+		just remove “progress” element.
+		-->
+	<div class="progress"><div></div></div>
+	<script src="../theme/shower.min.js"></script>
+</body>
+</html>
